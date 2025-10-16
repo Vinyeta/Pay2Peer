@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Button } from "./Button"
 import { motion } from "framer-motion"
+import React from "react"
 
 export function Landing() {
   return (
@@ -60,7 +61,7 @@ export function Landing() {
               transition={{ duration: 0.8, delay: 0.3 }}
             >
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                <img className="w-full h-auto" src="/app/assets/landing.png" alt="Pay2Peer Dashboard" />
+                <img className="w-full h-auto" src="/landing.png" alt="Pay2Peer Dashboard" />
               </div>
             </motion.div>
           </div>
@@ -111,7 +112,7 @@ export function Landing() {
               transition={{ duration: 0.7 }}
             >
               <div className="relative rounded-2xl overflow-hidden shadow-xl">
-                <img className="w-full h-auto" src="/app/assets/security.png" alt="Security Features" />
+                <img className="w-full h-auto" src="/security.png" alt="Security Features" />
               </div>
             </motion.div>
 
@@ -178,17 +179,17 @@ export function Landing() {
           <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
             {[
               {
-                icon: "/app/assets/icon1.png",
+                icon: "/icon1.png",
                 title: "Instant Payments",
                 description: "Start accepting online payments today with zero setup fees",
               },
               {
-                icon: "/app/assets/icon2.png",
+                icon: "/icon2.png",
                 title: "Real-time Transfers",
                 description: "Money moves instantly between accounts, 24/7",
               },
               {
-                icon: "/app/assets/icon3.png",
+                icon: "/icon3.png",
                 title: "Seamless Integration",
                 description: "Get paid effortlessly with our simple API and plugins",
               },
