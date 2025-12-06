@@ -12,10 +12,10 @@ interface SidebarProps {
 export function Sidebar({ open, onToggle }: SidebarProps) {
   const menuItems = [
     { label: "Dashboard", icon: "📊", href: "/dashboard" },
-    { label: "Wallet", icon: "👛", href: "/wallet" },
-    { label: "Send", icon: "📤", href: "/send" },
-    { label: "Request", icon: "📬", href: "/request" },
-    { label: "Account Setting", icon: "⚙️", href: "/settings" },
+    { label: "Wallet", icon: "👛", href: "/dashboard/wallet" },
+    { label: "Send", icon: "📤", href: "/dashboard/send" },
+    { label: "Request", icon: "📬", href: "/dashboard/request" },
+    { label: "Account Settings", icon: "⚙️", href: "/dashboard/account-settings" },
   ]
 
   return (

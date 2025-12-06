@@ -57,8 +57,10 @@ export default function DashboardPage() {
           {/* Main Content */}
           <div className="flex gap-8">
             {/* Left Column - Balance */}
-            <div className="flex-shrink-0">
-              <BalanceCard balance={269.89} currency="₹" />
+            <div className="flex-shrink-0 grow">
+              <div className="w-[300px] m-auto">
+                <BalanceCard balance={269.89} currency="€" />
+              </div>
             </div>
 
             {/* Right Column - Pending Transactions (vertical layout, far right) */}
