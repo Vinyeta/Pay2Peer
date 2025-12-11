@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { Button } from "@/app/components/Button"
+import { Button } from "../components/Button"
 
 export default function SignInPage() {
   const [email, setEmail] = useState("")
@@ -14,7 +14,22 @@ export default function SignInPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // TODO: Implement authentication logic
+     const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    };
+
+    fetch(`${API_ROOT}api/auth/login`, options)
+      .then((response) => response.json())
+      .then((json) => {
+        localStorage.setItem("token", json.token);
+        setDecodifiedToken(jwt.decode(json.token)._id);
+        localStorage.setItem("decodifiedToken", jwt.decode(json.token)._id);
+      })
+      .catch((error) => console.log(error));
     setTimeout(() => setIsLoading(false), 1000)
   }
 

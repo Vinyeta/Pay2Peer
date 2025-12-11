@@ -4,9 +4,13 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { Button } from "@/app/components/Button"
+import { useRouter } from "next/navigation"
+import { Button } from "../components/Button"
+
+const API_ROOT = process.env.NEXT_PUBLIC_API_ROOT ?? "http://localhost:5000/"
 
 export default function SignUpPage() {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -25,8 +29,19 @@ export default function SignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // TODO: Implement registration logic
-    setTimeout(() => setIsLoading(false), 1000)
+     const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    };
+
+    fetch(`${API_ROOT}api/auth/signUp`, options)
+      .then((response) => response.json())
+      .then(() => router.push("/signin"))
+      .catch((err) => console.error(err))
+      .finally(() => setIsLoading(false))
   }
 
   return (
