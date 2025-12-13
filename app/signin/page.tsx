@@ -1,36 +1,48 @@
 "use client"
 
-import type React from "react"
-
+import React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "../components/Button"
+import { useAuth } from "../context/AuthContext"
+import jwt from "jsonwebtoken"
+import { useRouter } from "next/navigation"
 
 export default function SignInPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const auth = useAuth()
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-     const options = {
+    const body = { email, password }
+    const options = {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    };
+    }
 
-    fetch(`${API_ROOT}api/auth/login`, options)
-      .then((response) => response.json())
-      .then((json) => {
-        localStorage.setItem("token", json.token);
-        setDecodifiedToken(jwt.decode(json.token)._id);
-        localStorage.setItem("decodifiedToken", jwt.decode(json.token)._id);
-      })
-      .catch((error) => console.log(error));
-    setTimeout(() => setIsLoading(false), 1000)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/auth/login`, options)
+      const json = await response.json()
+      if (json?.token) {
+        localStorage.setItem("token", json.token)
+        const decodedId = jwt.decode(json.token)?._id
+        if (decodedId) localStorage.setItem("decodifiedToken", decodedId)
+        auth.setToken(json.token)
+        if (decodedId) auth.setDecodifiedTokenState(decodedId)
+        router.push("/dashboard")
+        return
+      }
+      console.error("Login failed", json)
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

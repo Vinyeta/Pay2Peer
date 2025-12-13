@@ -7,7 +7,6 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "../components/Button"
 
-const API_ROOT = process.env.NEXT_PUBLIC_API_ROOT ?? "http://localhost:5000/"
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -37,7 +36,7 @@ export default function SignUpPage() {
       body: JSON.stringify(formData),
     };
 
-    fetch(`${API_ROOT}api/auth/signUp`, options)
+    fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/auth/signUp`, options)
       .then((response) => response.json())
       .then(() => router.push("/signin"))
       .catch((err) => console.error(err))

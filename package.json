@@ -53,6 +53,7 @@
     "geist": "latest",
     "input-otp": "1.4.1",
     "jiti": "latest",
+    "jsonwebtoken": "^9.0.3",
     "less": "latest",
     "lightningcss": "latest",
     "lucide-react": "^0.454.0",
