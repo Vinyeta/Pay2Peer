@@ -58,7 +58,7 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
   const stripe = useStripe()
   const elements = useElements()
   const auth = useAuth()
-  const isMounted = React.useRef(true)
+  const isMounted = React.useRef(false)
 
   React.useEffect(() => {
     isMounted.current = true

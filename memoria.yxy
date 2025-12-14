@@ -1,0 +1,185 @@
+Memoria del Proyecto Pay2Peer
+
+1. Portada
+- Título: Pay2Peer — Plataforma de transferencias y monedero
+- Autor/es
+- Fecha
+- Versión
+
+2. Resumen ejecutivo
+- Breve descripción del proyecto
+- Objetivos principales
+- Resultados clave
+
+3. Índice
+- Secciones y anexos con números de página (si aplica)
+
+4. Introducción
+- Contexto y motivación
+- Alcance del proyecto
+- Definición de términos y acrónimos
+
+5. Objetivos
+- Objetivo general
+- Objetivos específicos
+
+6. Requisitos
+- Requisitos funcionales (registro, login, enviar/recibir dinero, recargar saldo, ver historial)
+- Requisitos no funcionales (seguridad, rendimiento, disponibilidad, compatibilidad)
+- Restricciones (tecnológicas, legales)
+
+7. Arquitectura del sistema
+- Visión general de la arquitectura (cliente, servidor, base de datos)
+- Diagrama de componentes (breve descripción de cada componente)
+  - Frontend: Next.js (App Router), React, Tailwind
+  - Backend: Node.js/Express (o similar), APIs REST
+  - Base de datos: modelo de usuarios, wallets, transacciones
+  - Servicios externos: Stripe (pagos), posibles servicios de analítica
+
+Detalles concretos:
+- Flujo general: el cliente (Next.js App Router) se comunica con el backend REST en `NEXT_PUBLIC_API_ROOT` (ej. http://localhost:3000/api/...). El backend expone rutas en `Pay2Peer-Node/src/resources/stripe/stripe.router.js` y controla la interacción con Stripe vía `Pay2Peer-Node/src/resources/stripe/stripe.controller.js`.
+- Diagrama rápido de componentes (texto):
+  - Cliente (app/): layouts `app/layout.tsx`, rutas en `app/dashboard/*`, `app/signin`, `app/signup`.
+  - Contexto de sesión: `app/context/AuthContext.tsx` (token JWT, usuario, wallet, `refreshUserAndWallet`).
+  - Backend API: `Pay2Peer-Node/src/server.js` monta router `/api/payments`.
+  - Pagos: Stripe API llamada desde `stripe.controller.js` para crear/confirmar PaymentIntent. El frontend usa `@stripe/stripe-js` + `@stripe/react-stripe-js`.
+
+
+8. Diseño e implementación
+- Estructura del frontend
+  - Rutas principales y layout
+  - `AuthContext`: gestión centralizada de sesión y token
+  - Componentes clave: Sidebar, Header, BalanceCard, TransactionCard, CheckoutForm
+  - Integración de Stripe Elements y manejo de errores (remount, confirm flow)
+- Estructura del backend
+  - Endpoints: `/api/payments/create-payment-intent`, `/api/payments/confirm-payment-intent`, `/api/payments/ready`
+  - Controladores y lógica de negocio (creación y confirmación de PaymentIntent, actualización de wallet)
+  - Modelos: User, Wallet, Transaction
+- Persistencia y normalización de datos (ej. cantidades en céntimos)
+- Manejo de configuración y variables de entorno
+
+Detalles concretos del backend:
+- Rutas y controladores clave:
+  - `POST /api/payments/create-payment-intent` -> `stripePayment` en `stripe.controller.js`. Recibe `{ amount }` en euros; multiplica por 100 y crea `stripe.paymentIntents.create({ amount: amount*100, currency: 'eur' })`.
+  - `POST /api/payments/confirm-payment-intent` -> `confirmPayment`. Recupera `paymentIntent` desde Stripe, valida estado `succeeded` y actualiza `Wallet` (suma fondos en euros) y crea registro en `Transaction`.
+  - `GET /api/payments/ready` -> probe de readiness que llama `stripe.balance.retrieve()` para validar conectividad con Stripe.
+- Modelos (implementación esperada):
+  - `User`: {_id, email, name, createdAt}
+  - `Wallet`: {_id, userId, funds (string/decimal en euros normalizados), currency}
+  - `Transaction`: {_id, walletId, type: 'stripe', amount, currency, stripePaymentIntentId, createdAt}
+- Normalización: almacenar importes en centavos en Stripe y en la DB usar string/decimal con dos decimales; conversions centralizadas en `Utils/moneyFormating`.
+- Variables env importantes:
+  - `NEXT_PUBLIC_API_ROOT` (frontend)
+  - `NEXT_PUBLIC_STRIPE_PK` (public key)
+  - `STRIPE_API_KEY` (secret key, backend)
+  - `JWT_SECRET`, `MONGO_URI`
+
+
+9. Seguridad y privacidad
+- Autenticación y autorización (JWT, encabezados Bearer)
+- Validaciones y saneamiento de entrada
+- Manejo seguro de claves (Stripe API key, variables de entorno)
+- Consideraciones de privacidad y cumplimiento (datos personales)
+
+Detalles y buenas prácticas aplicadas:
+- Autenticación: `AuthContext` almacena token JWT en `localStorage` y lo añade en encabezado `Authorization: Bearer <token>` en llamadas al backend. El backend valida token (JWT) y usa `decoded._id` para identificar usuario.
+- Autorización: endpoints sensibles (`confirm-payment-intent`) verifican que el token pertenezca al usuario asociado con la wallet afectada.
+- Saneamiento: validar `amount` como número positivo en frontend y backend; sanitizar entradas de cadenas y usar parámetros en consultas DB.
+- Seguridad de claves: `STRIPE_API_KEY` solo en servidor; `NEXT_PUBLIC_STRIPE_PK` público. No hardcodear claves en el repositorio.
+- Protección CSRF/XSS: Next.js App Router + fetch con Authorization header; escapar cualquier HTML mostrado con datos de usuario.
+- Registro de auditoría: `transactionsController.createStripeTransaction` guarda metadatos de pago (paymentIntentId, amount, customer email opcional) para trazabilidad.
+
+
+10. Pruebas y validación
+- Estrategia de pruebas (unitarias, integración, E2E)
+- Scripts y herramientas (headless tests, reproducción de hidración)
+- Casos de prueba relevantes (flujo de recarga, confirmación Stripe, errores de red)
+- Resultados resumidos de pruebas y problemas conocidos
+
+Plan y artefactos de pruebas concretos:
+- Unitarias: usar `jest` para utilidades (moneyFormating), validadores y modelos (mocks de DB). Carpetas: `__tests__/utils`, `__tests__/models`.
+- Integración: pruebas contra una base de datos de staging (Mongo local con datos de prueba). Probar controladores de pagos con `nock` para simular respuestas de Stripe.
+- E2E (headless): `scripts/stripe-navigation-test.js` usa Playwright/Puppeteer para:
+  - Hacer login programático, insertar token en `localStorage`, navegar a `/dashboard/fund`.
+  - Esperar al formulario, rellenar amount y pulsar `Pay`.
+  - Verificar que `/api/payments/create-payment-intent` devuelve `clientSecret` y que `confirmCardPayment` completa el flujo.
+- Mocking en CI: usar mocks para Stripe (por ejemplo, `nock` o servidor stub) para evitar llamadas reales en pipelines.
+- Casos concretos a cubrir:
+  - Crear PaymentIntent con amount no numérico → 400 en backend.
+  - ConfirmPayment con paymentIntent no existente → 404.
+  - Race conditions: navegación rápida que destruye `CardElement` → remount/retry test.
+- Comandos útiles para correr pruebas localmente:
+  - `npm run test:unit`
+  - `node scripts/stripe-navigation-test.js`
+  - `curl -X GET ${'${NEXT_PUBLIC_API_ROOT}'}api/payments/ready`
+
+
+11. Despliegue
+- Requisitos de entorno (NODE_ENV, variables NEXT_PUBLIC_*, STRIPE_API_KEY)
+- Instrucciones de build y despliegue (comandos principales)
+- Docker y/o CI/CD (si aplica)
+
+Detalle de despliegue y comandos:
+- Variables de entorno necesarias:
+  - `NODE_ENV=production`
+  - `NEXT_PUBLIC_API_ROOT` (por ejemplo `https://api.mi-dominio.com/`)
+  - `NEXT_PUBLIC_STRIPE_PK`
+  - `STRIPE_API_KEY`
+  - `JWT_SECRET`
+  - `MONGO_URI`
+- Build y despliegue (Next.js):
+  - `npm install`
+  - `npm run build`
+  - `npm run start` (o desplegar en Vercel/Netlify con ajustes de variables de entorno)
+- Backend (Node API):
+  - `cd Pay2Peer-Node`
+  - `npm install`
+  - `npm run start` (o con PM2: `pm2 start src/server.js --name pay2peer-api`)
+- Docker (ejemplo mínimo):
+  - `docker build -t pay2peer-frontend .` y `docker build -t pay2peer-api -f Pay2Peer-Node/Dockerfile .`
+  - `docker run -e STRIPE_API_KEY=... -e MONGO_URI=... pay2peer-api`
+
+
+12. Mantenimiento y operación
+- Monitorización y alertas (logs, métricas, endpoints de salud)
+- Procedimientos de recuperación ante fallos
+- Consideraciones para actualizaciones y migraciones
+
+Operación concreta:
+- Healthchecks:
+  - Frontend: `/health` (simple 200)
+  - Backend: `/api/health` que chequea DB y Stripe (ej. intentos a `stripe.balance.retrieve()` con caching de resultado)
+- Logs y métricas:
+  - Logs estructurados (JSON) para errores de pagos y eventos críticos.
+  - Integración con un servicio de logs (Papertrail/ELK) y métricas (Prometheus/Grafana).
+- Procedimientos:
+  - En caso de fallo en Stripe (503), reagendar procesos de confirmación y alertar por Slack/email.
+  - Backups: daily DB backups para evitar pérdida de registros de transacciones.
+
+
+13. Conclusiones
+- Logros alcanzados
+- Limitaciones y aprendizajes
+
+14. Trabajo futuro
+- Mejoras prioritarias (pruebas deterministas, mocks para Stripe en CI, robustez frente a navegación rápida)
+- Nuevas funcionalidades planificadas
+
+15. Anexos
+- Diagramas (arquitectura, secuencia de pagos)
+- Extractos de código importantes
+- Comandos útiles para pruebas y despliegue
+- Registro de cambios (changelog)
+
+Diagramas incluidos (carpeta `docs/`):
+- [Diagrama de arquitectura](docs/architecture.svg): muestra componentes (Cliente, Backend, DB, Stripe) y flujos principales.
+- [Diagrama de secuencia de pagos](docs/payment-sequence.svg): secuencia desde el frontend creando un PaymentIntent hasta la confirmación y actualización de wallet.
+
+16. Bibliografía y referencias
+- Enlaces a documentación (Stripe, Next.js, React)
+
+
+Instrucciones para usar este esquema
+- Rellene cada sección con detalle técnico y evidencias (logs, capturas) según corresponda.
+- Añadir diagramas en formato PNG/SVG dentro de `docs/` y referenciarlos en los anexos.
+- Mantener `memoria.yxy` como documento principal y generar una versión PDF para entrega.

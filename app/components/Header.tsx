@@ -2,6 +2,7 @@
 
 import { Button } from "./Button"
 import Link from "next/link"
+import Image from "next/image"
 import { motion } from "framer-motion"
 
 export function Header() {
@@ -14,7 +15,7 @@ export function Header() {
     >
       <div className="flex justify-between items-center mx-auto max-w-7xl px-6 lg:px-8 py-4">
         <Link href="/" className="flex items-center">
-          <img src="/app/assets/unnamed.png" alt="Pay2Peer Logo" className="h-10 w-auto" />
+          <Image src="/unnamed.png" alt="Pay2Peer Logo" width={70} height={24} priority className="block" />
         </Link>
 
         <nav className="hidden md:flex gap-8 items-center">

@@ -1,0 +1,37 @@
+{
+  "console": [
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "warning",
+      "text": "You may test your Stripe.js integration over HTTP. However, live Stripe.js integrations must use HTTPS."
+    },
+    {
+      "type": "log",
+      "text": "%c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit"
+    },
+    {
+      "type": "log",
+      "text": "%c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {route: /dashboard/fund, path: /dashboard/fund}"
+    },
+    {
+      "type": "log",
+      "text": "%c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {route: /signin, path: /signin}"
+    },
+    {
+      "type": "log",
+      "text": "%c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard/fund color: rgb(120, 120, 120) color: inherit {o: http://localhost:3000/dashboard/fund, sv: 0.1.3, sdkn: @vercel/analytics/next, sdkv: 1.6.1, ts: 1765731496901}"
+    },
+    {
+      "type": "log",
+      "text": "%c[Vercel Web Analytics]%c [pageview] http://localhost:3000/signin color: rgb(120, 120, 120) color: inherit {o: http://localhost:3000/signin, sv: 0.1.3, sdkn: @vercel/analytics/next, sdkv: 1.6.1, ts: 1765731496902}"
+    },
+    {
+      "type": "log",
+      "text": "%c[Vercel Web Analytics]%c [pageview] http://localhost:3000/dashboard color: rgb(120, 120, 120) color: inherit {o: http://localhost:3000/dashboard, sv: 0.1.3, sdkn: @vercel/analytics/next, sdkv: 1.6.1, ts: 1765731497241}"
+    }
+  ],
+  "error": "TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('form input[type=\"number\"]') to be visible\u001b[22m\n"
+}

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="500" viewBox="0 0 900 500">
+  <style>
+    .actor { font: bold 14px sans-serif; fill:#0f172a }
+    .msg { font: 12px sans-serif; fill:#0f172a }
+    .line { stroke:#0f172a; stroke-dasharray:4 4; }
+    .arrow { stroke:#0f172a; stroke-width:1.2; fill:none; marker-end:url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#0f172a" />
+    </marker>
+  </defs>
+
+  <!-- Actors -->
+  <text x="80" y="40" class="actor">Cliente (Browser)</text>
+  <text x="340" y="40" class="actor">Frontend (Next.js)</text>
+  <text x="560" y="40" class="actor">Backend API</text>
+  <text x="760" y="40" class="actor">Stripe</text>
+
+  <!-- Lifelines -->
+  <line x1="100" y1="60" x2="100" y2="420" class="line" />
+  <line x1="420" y1="60" x2="420" y2="420" class="line" />
+  <line x1="600" y1="60" x2="600" y2="420" class="line" />
+  <line x1="780" y1="60" x2="780" y2="420" class="line" />
+
+  <!-- Messages -->
+  <path d="M100 100 L420 100" class="arrow" />
+  <text x="260" y="90" text-anchor="middle" class="msg">User inputs amount & card</text>
+
+  <path d="M420 140 L600 140" class="arrow" />
+  <text x="510" y="130" text-anchor="middle" class="msg">POST /api/payments/create-payment-intent {amount}</text>
+
+  <path d="M600 180 L780 180" class="arrow" />
+  <text x="690" y="170" text-anchor="middle" class="msg">Stripe: create PaymentIntent</text>
+
+  <path d="M780 220 L600 220" class="arrow" />
+  <text x="690" y="210" text-anchor="middle" class="msg">client_secret</text>
+
+  <path d="M600 260 L420 260" class="arrow" />
+  <text x="510" y="250" text-anchor="middle" class="msg">200 { clientSecret }</text>
+
+  <path d="M420 300 L100 300" class="arrow" />
+  <text x="260" y="290" text-anchor="middle" class="msg">Frontend calls stripe.confirmCardPayment(clientSecret)</text>
+
+  <path d="M420 340 L600 340" class="arrow" />
+  <text x="510" y="330" text-anchor="middle" class="msg">POST /api/payments/confirm-payment-intent (notify)</text>
+
+  <path d="M600 380 L780 380" class="arrow" />
+  <text x="690" y="370" text-anchor="middle" class="msg">(optional) Stripe webhooks → Backend update</text>
+</svg>

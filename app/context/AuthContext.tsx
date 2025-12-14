@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState } from "react"
+import React, { createContext, useContext, useEffect, useState, useRef } from "react"
 
 export type User = {
   _id: string
@@ -27,37 +27,43 @@ type AuthContextType = {
   wallet: Wallet | null
   refreshUserAndWallet: () => Promise<void>
 }
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  
-  const [token, setTokenState] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem("token")
-        } catch {
-      return null
-    }
-  })
+  const [token, setTokenState] = useState<string | null>(null)
 
-  const [decodifiedToken, setDecodifiedTokenState] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem("decodifiedToken")
-        } catch {
-      return null
-    }
-  })
+  const [decodifiedToken, setDecodifiedTokenState] = useState<string | null>(null)
 
   const [user, setUser] = React.useState<User | null>(null);
   const [wallet, setWallet] = React.useState<Wallet | null>(null);
 
   const [userId, setUserId] = useState<string | null>(null)
+  const mountedRef = useRef(false)
+
+  // Hydrate token and decodifiedToken from localStorage on mount
+  useEffect(() => {
+    mountedRef.current = true
+    try {
+      const t = localStorage.getItem('token')
+      if (t) setTokenState(t)
+    } catch {}
+    try {
+      const d = localStorage.getItem('decodifiedToken')
+      if (d) setDecodifiedTokenState(d)
+    } catch {}
+
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   useEffect(() => {
     // If there's no token clear user state
     if (!token) {
-      setUser(null)
-      setWallet(null)
+      if (mountedRef.current) {
+        setUser(null)
+        setWallet(null)
+      }
       return
     }
 
@@ -72,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const b64 = payload.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice((payload.length + 3) % 4)
           const decoded = JSON.parse(atob(b64))
           id = decoded?._id || decoded?.id || null
-          if (id) {
+          if (id && mountedRef.current) {
             setDecodifiedTokenState(id)
             try { localStorage.setItem('decodifiedToken', id) } catch {}
           }
@@ -97,16 +103,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!response.ok) throw new Error('user fetch failed')
         return response.json()
       })
-      .then((json) => setUser(json))
+      .then((json) => { if (mountedRef.current) setUser(json) })
       .then(() => {
         fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${id}/author`, options)
           .then((response) => {
             if (!response.ok) throw new Error('wallet fetch failed')
             return response.json()
           })
-          .then((json) => {
-            setWallet(json)
-          })
+          .then((json) => { if (mountedRef.current) setWallet(json) })
           .catch(() => {})
       })
       .catch(() => {})
@@ -123,9 +127,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const uRes = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/users/${decodifiedToken}`, options)
-      if (uRes.ok) setUser(await uRes.json())
+      if (uRes.ok && mountedRef.current) setUser(await uRes.json())
       const wRes = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${decodifiedToken}/author`, options)
-      if (wRes.ok) setWallet(await wRes.json())
+      if (wRes.ok && mountedRef.current) setWallet(await wRes.json())
     } catch {
       // ignore
     }
