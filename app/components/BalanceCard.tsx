@@ -31,7 +31,7 @@ export function BalanceCard({ balance = 0, currency = "€" }: BalanceCardProps)
           // API returns formatted funds string
           setFunds(text)
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     }

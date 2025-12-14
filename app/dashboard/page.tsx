@@ -33,7 +33,7 @@ export default function DashboardPage() {
         if ((!auth.user || !auth.wallet) && auth.refreshUserAndWallet) {
           await auth.refreshUserAndWallet()
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
 
@@ -140,7 +140,7 @@ export default function DashboardPage() {
                           amount = raw / 100
                         }
                       }
-                    } catch (e) {
+                    } catch {
                       amount = 0
                     }
 

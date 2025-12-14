@@ -13,7 +13,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PK ?? "")
 
 export default function FundPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const auth = useAuth()
+  
   const [amount, setAmount] = useState<string>("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -105,15 +105,15 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token ?? ""}` },
           body: JSON.stringify({ paymentIntentId: result.paymentIntent?.id ?? result.paymentIntent }),
         })
-      } catch (e) {
-        console.warn("Failed to notify backend of payment", e)
+      } catch (_e) {
+        console.warn("Failed to notify backend of payment", _e)
       }
       // refresh user/wallet
       try {
         auth.refreshUserAndWallet()
-      } catch (e) {
-        // ignore
-      }
+      } catch {
+            // ignore
+          }
       alert("Payment successful — funds added to your wallet")
     } catch (err: any) {
       console.error(err)

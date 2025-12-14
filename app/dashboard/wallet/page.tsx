@@ -82,10 +82,10 @@ export default function WalletPage() {
           }
         })
         setTransactions(mapped)
-      } catch (e) {
-        console.error('Error loading transactions', e)
-        setTransactions([])
-      } finally {
+      } catch {
+          console.error('Error loading transactions')
+          setTransactions([])
+        } finally {
         setLoading(false)
       }
     }
@@ -104,7 +104,7 @@ export default function WalletPage() {
     try {
       const date = new Date(d)
       return new Intl.DateTimeFormat(navigator?.language || 'en-US', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
-    } catch (e) {
+    } catch {
       return d
     }
   }
@@ -116,7 +116,7 @@ export default function WalletPage() {
       const formatted = new Intl.NumberFormat(navigator?.language || 'en-US', { style: 'currency', currency }).format(abs)
       const sign = amount > 0 ? '+' : amount < 0 ? '-' : ''
       return `${sign}${formatted}`
-    } catch (e) {
+    } catch {
       return `${amount.toFixed(2)} ${currency}`
     }
   }

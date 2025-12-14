@@ -1,6 +1,6 @@
  'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Menu } from 'lucide-react'
 import { UserProfile } from '../../components/UserProfile'
 import { motion } from 'framer-motion';
@@ -41,7 +41,7 @@ export default function RequestPage() {
         const err = await res.text()
         alert('Error: ' + err)
       }
-    } catch (err) {
+    } catch {
       alert('Network error')
     } finally {
       setIsLoading(false)

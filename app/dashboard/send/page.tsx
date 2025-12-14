@@ -45,7 +45,7 @@ export default function SendPage() {
         const err = await res.text().catch(() => 'Server error')
         alert('Error: ' + err)
       }
-    } catch (err) {
+    } catch {
       alert('Network error')
     } finally {
       setIsLoading(false)

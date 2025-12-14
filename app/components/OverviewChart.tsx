@@ -47,7 +47,7 @@ export default function OverviewChart({ walletId, token, days = 7 }: Props) {
           const normalized: Tx[] = json.map((e: any) => ({ amount: e.funds ?? 0, createdAt: undefined }))
           setTxs(normalized)
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     }

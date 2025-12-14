@@ -38,7 +38,6 @@ export function UserProfile({ name }: UserProfileProps) {
         <div className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg overflow-hidden bg-gradient-to-br from-teal-400 to-blue-500">
           {auth.user?.avatar ? (
             // show avatar image
-            // eslint-disable-next-line @next/next/no-img-element
             <img src={auth.user.avatar} alt={auth.user.name ?? "avatar"} className="w-full h-full object-cover" />
           ) : (
             <span className="text-white">

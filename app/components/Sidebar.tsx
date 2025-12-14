@@ -33,7 +33,6 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
     if (window.innerWidth < 768) {
       onToggle()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
   const auth = useAuth()

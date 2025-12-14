@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setTokenState] = useState<string | null>(() => {
     try {
       return localStorage.getItem("token")
-    } catch (e) {
+        } catch {
       return null
     }
   })
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [decodifiedToken, setDecodifiedTokenState] = useState<string | null>(() => {
     try {
       return localStorage.getItem("decodifiedToken")
-    } catch (e) {
+        } catch {
       return null
     }
   })
@@ -74,10 +74,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id = decoded?._id || decoded?.id || null
           if (id) {
             setDecodifiedTokenState(id)
-            try { localStorage.setItem('decodifiedToken', id) } catch (e) {}
+            try { localStorage.setItem('decodifiedToken', id) } catch {}
           }
         }
-      } catch (e) {
+      } catch {
         // ignore decode errors
       }
     }
@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (uRes.ok) setUser(await uRes.json())
       const wRes = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${decodifiedToken}/author`, options)
       if (wRes.ok) setWallet(await wRes.json())
-    } catch (e) {
+    } catch {
       // ignore
     }
   }
@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTokenState(t)
     try {
       localStorage.setItem('token', t)
-    } catch (e) {}
+    } catch {}
     // effect will pick this up and persist / decode
   }
 
@@ -145,7 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.removeItem("token")
       localStorage.removeItem("decodifiedToken")
-    } catch (e) {}
+    } catch {}
   }
 
   const value: AuthContextType = {

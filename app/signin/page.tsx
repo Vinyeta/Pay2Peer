@@ -47,9 +47,9 @@ export default function SignInPage() {
             const maxAge = 30 * 24 * 60 * 60 // 30 days
             const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : ""
             document.cookie = `auth=${cookieValue}; Path=/; Max-Age=${maxAge}; SameSite=Strict${secure}`
-          } catch (e) {
-            // ignore cookie set errors
-          }
+          } catch {
+              // ignore cookie set errors
+            }
         }
 
         router.push("/dashboard")
