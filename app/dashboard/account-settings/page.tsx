@@ -51,16 +51,21 @@ export default function AccountSettingsPage() {
             <Menu size={20} />
           </button>
         )}
-        {/* Top user profile */}
-        <div className="flex justify-end items-center p-6 bg-white border-b border-gray-200">
-          <div className="w-64">
-            <UserProfile />
-          </div>
-        </div>
+        <div className="p-8 pt-16 md:pt-8">
+          <div className="w-full max-w-4xl mx-auto">
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Account settings</h1>
+                <p className="text-gray-600">Update your profile and password</p>
+              </div>
+              <div className="w-64">
+                <UserProfile />
+              </div>
+            </div>
 
-        {/* Main content */}
-        <div className="relative flex items-center justify-center min-h-[calc(100vh-100px)] p-8">
-          {/* Form card */}
+              {/* Main content */}
+              <div className="relative flex items-start justify-center min-h-[calc(100vh-120px)] p-8">
+            {/* Form card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -132,6 +137,8 @@ export default function AccountSettingsPage() {
               </button>
             </form>
           </motion.div>
+            </div>
+          </div>
         </div>
       </main>
     </div>

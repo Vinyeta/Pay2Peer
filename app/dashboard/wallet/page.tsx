@@ -178,17 +178,22 @@ export default function WalletPage() {
             <Menu size={20} />
           </button>
         )}
-        <div className="p-8 flex flex-col items-center">
-          {/* Header with User Profile */}
-          <div className="w-full flex justify-end mb-8">
-            <div className="w-64">
-              <UserProfile />
+        <div className="p-8 pt-16 md:pt-8">
+          <div className="w-full max-w-4xl mx-auto">
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Wallet</h1>
+                <p className="text-gray-600">Overview of your balance and recent activity</p>
+              </div>
+              <div className="w-64">
+                <UserProfile />
+              </div>
             </div>
           </div>
 
           
 
-          <div className="w-full max-w-4xl">
+          <div className="w-full max-w-4xl mx-auto">
             {/* Balance Card with Add Funds button on top */}
             <div className="relative mb-8">
               {/* Top decorative dots */}
@@ -200,11 +205,11 @@ export default function WalletPage() {
                 </div>
               </div>
 
-              <div className="flex items-end items-center gap-4">
+              <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
                 <div className="flex-shrink-0">
                   <BalanceCard balance={269.89} currency="$" />
                 </div>
-                <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors mt-12">
+                <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors md:mt-12 mt-0">
                   Add Funds
                 </button>
               </div>

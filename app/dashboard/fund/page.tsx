@@ -18,10 +18,6 @@ export default function FundPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  
-
-  
-
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
@@ -33,20 +29,24 @@ export default function FundPage() {
           </button>
         )}
         <div className="p-8 pt-16 md:pt-8">
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Add funds</h1>
-              <p className="text-gray-600">Top up your wallet using Stripe.</p>
+          <div className="w-full max-w-4xl mx-auto">
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Add funds</h1>
+                <p className="text-gray-600">Top up your wallet using Stripe.</p>
+              </div>
+              <div className="w-64">
+                <UserProfile />
+              </div>
             </div>
-            <div className="w-64">
-              <UserProfile />
-            </div>
-          </div>
 
-          <div className="max-w-md">
-            <Elements stripe={stripePromise}>
-              <CheckoutForm amount={amount} setAmount={setAmount} loading={loading} setLoading={setLoading} error={error} setError={setError} />
-            </Elements>
+            <div className="relative flex items-start justify-center min-h-[calc(100vh-120px)] p-8">
+              <div className="max-w-md mx-auto">
+                <Elements stripe={stripePromise}>
+                  <CheckoutForm amount={amount} setAmount={setAmount} loading={loading} setLoading={setLoading} error={error} setError={setError} />
+                </Elements>
+              </div>
+            </div>
           </div>
         </div>
       </main>

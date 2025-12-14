@@ -6,6 +6,7 @@ import { BalanceCard } from "../components/BalanceCard"
 import { TransactionCard } from "../components/TransactionCard"
 import { UserProfile } from "../components/UserProfile"
 import OverviewChart from "../components/OverviewChart"
+import TransactionsHistogram from "../components/TransactionsHistogram"
 import { useState, useEffect } from "react"
 import { Menu } from 'lucide-react'
 import { useAuth } from "../context/AuthContext"
@@ -105,8 +106,13 @@ export default function DashboardPage() {
               <div className="w-[300px] m-auto mb-6">
                 <BalanceCard balance={269.89} currency="€" />
               </div>
-              <div className="max-w-md m-auto">
-                <OverviewChart walletId={auth.wallet?._id ?? null} token={auth.token ?? null} days={7} />
+              <div className="max-w-4xl m-auto flex flex-col md:flex-row gap-4 items-stretch">
+                <div className="w-full md:w-1/2">
+                  <OverviewChart walletId={auth.wallet?._id ?? null} token={auth.token ?? null} days={7} />
+                </div>
+                <div className="w-full md:w-1/2">
+                  <TransactionsHistogram walletId={auth.wallet?._id ?? null} token={auth.token ?? null} days={7} />
+                </div>
               </div>
             </div>
 
