@@ -7,6 +7,7 @@ import { TransactionCard } from "../components/TransactionCard"
 import { UserProfile } from "../components/UserProfile"
 import OverviewChart from "../components/OverviewChart"
 import { useState, useEffect } from "react"
+import { Menu } from 'lucide-react'
 import { useAuth } from "../context/AuthContext"
 
 export default function DashboardPage() {
@@ -79,8 +80,13 @@ export default function DashboardPage() {
     <div className="flex h-screen bg-gray-50">
       <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
       
-      <main className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"}`}>
-        <div className="p-8">
+      <main className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "md:ml-64" : "md:ml-20"} ml-0`}>
+        {!sidebarOpen && (
+          <button className="md:hidden fixed top-6 left-4 z-50 p-2 bg-white rounded-lg shadow-md" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
+          </button>
+        )}
+        <div className="p-8 pt-16 md:pt-8">
           {/* Header */}
           <div className="flex justify-between items-start mb-8">
             <div>
@@ -93,7 +99,7 @@ export default function DashboardPage() {
           </div>
 
             {/* Main Content */}
-          <div className="flex gap-8">
+            <div className="flex flex-col md:flex-row gap-8">
             {/* Left Column - Balance + Chart */}
             <div className="flex-shrink-0 grow">
               <div className="w-[300px] m-auto mb-6">
@@ -105,9 +111,9 @@ export default function DashboardPage() {
             </div>
 
             {/* Right Column - Pending Transactions (vertical layout, far right) */}
-            <div className="flex-1 flex flex-col items-end">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 w-80">Pending Requests</h2>
-              <div className="w-80 space-y-4">
+            <div className="flex-1 flex flex-col items-stretch md:items-end">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 w-full md:w-80">Pending Requests</h2>
+              <div className="w-full md:w-80 space-y-4">
                 {loadingRequests ? (
                   <div className="text-sm text-gray-500">Loading requests...</div>
                 ) : requests.length === 0 ? (

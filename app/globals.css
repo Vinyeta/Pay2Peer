@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
 /* Removed invalid tw-animate-css import and custom-variant, simplified theme configuration */
 
 :root {
@@ -115,16 +117,59 @@
 }
 
 @layer base {
+  /* show pointer for interactive buttons/controls (except disabled) */
+  button:not([disabled]),
+  input[type="button"]:not([disabled]),
+  input[type="submit"]:not([disabled]),
+  input[type="reset"]:not([disabled]) {
+    cursor: pointer;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 /* Added utility classes for animations */
 @layer utilities {
+  /* Card */
+  .card {
+    @apply bg-white dark:bg-[color:var(--color-card)] rounded-2xl shadow-md border border-gray-100 dark:border-neutral-800 p-4;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg bg-teal-500 text-white font-medium hover:bg-teal-600 transition-colors;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    @apply fixed left-0 top-0 h-screen bg-white dark:bg-[color:var(--color-sidebar)] border-r border-gray-100 dark:border-neutral-800 z-40;
+    width: 16rem; /* 256px */
+  }
+
+  .sidebar .brand {
+    @apply text-2xl font-extrabold text-teal-600 dark:text-white;
+  }
+
+  .sidebar nav a {
+    @apply block text-gray-700 dark:text-gray-200 px-4 py-3 rounded-lg hover:bg-teal-50 dark:hover:bg-[color:var(--color-sidebar-accent)] transition-colors;
+  }
+
+  .sidebar nav a.active {
+    @apply bg-teal-100 dark:bg-[color:var(--color-sidebar-primary)] text-teal-700 dark:text-white;
+  }
+
+  .muted {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
   .animate-fade-in {
     animation: fadeIn 0.5s ease-in;
   }

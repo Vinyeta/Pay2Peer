@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
+import { Menu } from 'lucide-react'
 import { Sidebar } from "../components/Sidebar"
 import { BalanceCard } from "../components/BalanceCard"
 import { TransactionCard } from "../components/TransactionCard"
@@ -22,7 +23,12 @@ export default function Dashboard() {
     <div className="flex h-screen bg-gray-50">
       <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
       
-      <main className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"}`}>
+      <main className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "md:ml-64" : "md:ml-20"} ml-0`}>
+        {!sidebarOpen && (
+          <button className="md:hidden fixed top-6 left-4 z-50 p-2 bg-white rounded-lg shadow-md" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
+          </button>
+        )}
         <div className="p-8">
           {/* Header */}
           <motion.div

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { useAuth } from "../context/AuthContext"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 interface UserProfileProps {
   name?: string
@@ -11,6 +12,21 @@ interface UserProfileProps {
 export function UserProfile({ name }: UserProfileProps) {
   const auth = useAuth()
   const router = useRouter()
+  const [isMobile, setIsMobile] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      setIsMobile(false)
+      return
+    }
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // don't mount/render the profile on mobile
+  if (isMobile) return null
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -42,7 +58,7 @@ export function UserProfile({ name }: UserProfileProps) {
           auth.logout()
           router.push("/signin")
         }}
-        className="w-full px-4 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+        className="w-full px-4 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors cursor-pointer"
       >
         Logout
       </motion.button>

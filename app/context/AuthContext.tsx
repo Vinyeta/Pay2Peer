@@ -133,6 +133,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setToken = (t: string) => {
     setTokenState(t)
+    try {
+      localStorage.setItem('token', t)
+    } catch (e) {}
     // effect will pick this up and persist / decode
   }
 

@@ -1,6 +1,7 @@
-'use client';
+ 'use client';
 
 import { useState } from 'react';
+import { Menu } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext';
 import { UserProfile } from '../../components/UserProfile';
 import { motion } from 'framer-motion';
@@ -32,7 +33,7 @@ export default function SendPage() {
         body: JSON.stringify({
           sender: auth.wallet._id,
           receiver: email,
-          amount: amount,
+          amount: parseFloat(amount),
         }),
       })
       if (res.ok) {
@@ -55,7 +56,12 @@ export default function SendPage() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
       
-      <main className="flex-1" style={{ marginLeft: sidebarOpen ? '256px' : '80px' }}>
+      <main className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "md:ml-64" : "md:ml-20"} ml-0`}>
+        {!sidebarOpen && (
+          <button className="md:hidden fixed top-6 left-4 z-50 p-2 bg-white rounded-lg shadow-md" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
+          </button>
+        )}
         {/* Top user profile */}
         <div className="flex justify-end items-center p-6 bg-white border-b border-gray-200">
           <div className="w-64">

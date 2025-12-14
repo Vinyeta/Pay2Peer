@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
+import { Menu } from 'lucide-react'
 import { Sidebar } from "../../components/Sidebar"
 import { UserProfile } from "../../components/UserProfile"
 import { Button } from "../../components/Button"
@@ -25,8 +26,13 @@ export default function FundPage() {
     <div className="flex h-screen bg-gray-50">
       <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-      <main className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"}`}>
-        <div className="p-8">
+      <main className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "md:ml-64" : "md:ml-20"} ml-0`}>
+        {!sidebarOpen && (
+          <button className="md:hidden fixed top-6 left-4 z-50 p-2 bg-white rounded-lg shadow-md" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
+          </button>
+        )}
+        <div className="p-8 pt-16 md:pt-8">
           <div className="flex justify-between items-start mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Add funds</h1>
@@ -52,6 +58,14 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
   const stripe = useStripe()
   const elements = useElements()
   const auth = useAuth()
+  const isMounted = React.useRef(true)
+
+  React.useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -60,7 +74,7 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
     if (isNaN(numeric) || numeric <= 0) return setError("Enter a valid amount")
     if (!stripe || !elements) return setError("Stripe not loaded")
 
-    setLoading(true)
+    if (isMounted.current) setLoading(true)
     try {
       // ask backend to create a PaymentIntent and return clientSecret
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/payments/create-payment-intent`, {
@@ -83,7 +97,7 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
       }
 
       // payment succeeded
-      setError(null)
+      if (isMounted.current) setError(null)
       // inform backend to credit the wallet (returns { success, amount })
       try {
         await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/payments/confirm-payment-intent`, {
@@ -95,13 +109,17 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
         console.warn("Failed to notify backend of payment", e)
       }
       // refresh user/wallet
-      auth.refreshUserAndWallet()
+      try {
+        auth.refreshUserAndWallet()
+      } catch (e) {
+        // ignore
+      }
       alert("Payment successful — funds added to your wallet")
     } catch (err: any) {
       console.error(err)
-      setError(err?.message ?? "Payment failed")
+      if (isMounted.current) setError(err?.message ?? "Payment failed")
     } finally {
-      setLoading(false)
+      if (isMounted.current) setLoading(false)
     }
   }
 

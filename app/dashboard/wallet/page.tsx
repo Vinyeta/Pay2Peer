@@ -4,6 +4,7 @@ import { Sidebar } from "../../components/Sidebar"
 import { BalanceCard } from "../../components/BalanceCard"
 import { UserProfile } from "../../components/UserProfile"
 import { useState, useEffect } from "react"
+import { Menu } from 'lucide-react'
 import { motion } from "framer-motion"
 import { ArrowUpRight, ArrowDownLeft } from 'lucide-react'
 import { useAuth } from "../../context/AuthContext"
@@ -130,9 +131,9 @@ export default function WalletPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
-        className="flex items-center justify-between p-4 bg-white rounded-lg hover:bg-gray-50 transition-colors border border-gray-100"
+        className="flex flex-col md:flex-row items-center justify-between p-4 bg-white rounded-lg hover:bg-gray-50 transition-colors border border-gray-100 w-full"
       >
-        <div className="flex items-center gap-6 flex-1">
+        <div className="flex items-center gap-6 flex-1 w-full">
           <div className={`p-2 rounded-lg ${
             transaction.type === "income" ? "bg-cyan-100" : "bg-red-100"
           }`}>
@@ -143,13 +144,13 @@ export default function WalletPage() {
             )}
           </div>
 
-          <div className="flex gap-8">
-            <span className="text-sm text-gray-600 w-28">{formatDate(transaction.date)}</span>
-            <span className="text-sm font-medium text-gray-900">{transaction.name}</span>
+          <div className="flex flex-col md:flex-row gap-2 md:gap-8 flex-1 min-w-0">
+            <span className="text-sm text-gray-600 md:w-28 truncate">{formatDate(transaction.date)}</span>
+            <span className="text-sm font-medium text-gray-900 truncate">{transaction.name}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto mt-3 md:mt-0 md:ml-4">
           <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
             transaction.type === "income"
               ? "bg-cyan-100 text-cyan-600"
@@ -157,7 +158,7 @@ export default function WalletPage() {
           }`}>
             {transaction.type === "income" ? "INCOME" : "OUTCOME"}
           </span>
-          <span className={`font-semibold text-right w-36 ${
+          <span className={`font-semibold text-right md:w-36 w-auto ${
             transaction.type === "income" ? "text-cyan-600" : "text-red-600"
           }`}>
             {formatCurrency(transaction.amount)}
@@ -171,7 +172,12 @@ export default function WalletPage() {
     <div className="flex h-screen bg-gray-50">
       <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-      <main className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"}`}>
+      <main className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "md:ml-64" : "md:ml-20"} ml-0`}>
+        {!sidebarOpen && (
+          <button className="md:hidden fixed top-6 left-4 z-50 p-2 bg-white rounded-lg shadow-md" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
+          </button>
+        )}
         <div className="p-8 flex flex-col items-center">
           {/* Header with User Profile */}
           <div className="w-full flex justify-end mb-8">
