@@ -5,6 +5,7 @@ import { Sidebar } from "../components/Sidebar"
 import { BalanceCard } from "../components/BalanceCard"
 import { TransactionCard } from "../components/TransactionCard"
 import { UserProfile } from "../components/UserProfile"
+import OverviewChart from "../components/OverviewChart"
 import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
 
@@ -16,35 +17,61 @@ export default function DashboardPage() {
   const [loadingRequests, setLoadingRequests] = useState(true)
 
   useEffect(() => {
-    if (!auth.decodifiedToken) {
-      setRequests([])
-      setLoadingRequests(false)
-      return
-    }
+    let mounted = true
+    async function loadRequests() {
+      if (!auth.token) {
+        setRequests([])
+        setLoadingRequests(false)
+        return
+      }
 
-    setLoadingRequests(true)
-    const options = {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + (auth.token ?? ""),
-      },
-    }
+      setLoadingRequests(true)
 
-    fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/${auth.decodifiedToken}/user`, options)
-      .then((res) => res.json())
-      .then((json) => {
+      // Ensure we have user and wallet populated; refresh if needed
+      try {
+        if ((!auth.user || !auth.wallet) && auth.refreshUserAndWallet) {
+          await auth.refreshUserAndWallet()
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      const id = auth.user?._id
+      if (!id) {
+        if (mounted) {
+          setRequests([])
+          setLoadingRequests(false)
+        }
+        return
+      }
+
+      const options = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + (auth.token ?? ""),
+        },
+      }
+
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/${id}/user`, options)
+        if (!mounted) return
+        const json = await res.json()
         if (Array.isArray(json)) {
-          // keep only pending requests
           setRequests(json.filter((r) => r?.status === "pending"))
         } else setRequests([])
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("failed to load requests", err)
-        setRequests([])
-      })
-      .finally(() => setLoadingRequests(false))
+        if (mounted) setRequests([])
+      } finally {
+        if (mounted) setLoadingRequests(false)
+      }
+    }
 
-  }, [auth.decodifiedToken, auth.token])
+    loadRequests()
+    return () => {
+      mounted = false
+    }
+  }, [auth.token, auth.user?._id])
 
   // `TransactionCard` will perform the PATCH; parent receives updates via `onStatusUpdated` callback below.
 
@@ -65,12 +92,15 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Main Content */}
+            {/* Main Content */}
           <div className="flex gap-8">
-            {/* Left Column - Balance */}
+            {/* Left Column - Balance + Chart */}
             <div className="flex-shrink-0 grow">
-              <div className="w-[300px] m-auto">
+              <div className="w-[300px] m-auto mb-6">
                 <BalanceCard balance={269.89} currency="€" />
+              </div>
+              <div className="max-w-md m-auto">
+                <OverviewChart walletId={auth.wallet?._id ?? null} token={auth.token ?? null} days={7} />
               </div>
             </div>
 

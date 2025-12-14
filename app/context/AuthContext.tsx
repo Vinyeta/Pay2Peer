@@ -54,22 +54,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
+    // If there's no token clear user state
+    if (!token) {
+      setUser(null)
+      setWallet(null)
+      return
+    }
+
+    // Ensure we have a decoded id (decodifiedToken). If missing, try decoding from JWT.
+    let id = decodifiedToken
+    if (!id) {
+      try {
+        const parts = token.split('.')
+        if (parts.length >= 2) {
+          const payload = parts[1]
+          // base64url -> base64
+          const b64 = payload.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice((payload.length + 3) % 4)
+          const decoded = JSON.parse(atob(b64))
+          id = decoded?._id || decoded?.id || null
+          if (id) {
+            setDecodifiedTokenState(id)
+            try { localStorage.setItem('decodifiedToken', id) } catch (e) {}
+          }
+        }
+      } catch (e) {
+        // ignore decode errors
+      }
+    }
+
+    if (!id) return
+
     const options = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
-      };
-      fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/users/${decodifiedToken}`, options)
-        .then((response) => response.json())
-        .then((json) => setUser(json))
-        .then(() => {
-          fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${decodifiedToken}/author`, options)
-            .then((response) => response.json())
-            .then((json) => {
-              setWallet(json);
-            });
-        });
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+      },
+    }
+
+    // fetch user and wallet for this id
+    fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/users/${id}`, options)
+      .then((response) => {
+        if (!response.ok) throw new Error('user fetch failed')
+        return response.json()
+      })
+      .then((json) => setUser(json))
+      .then(() => {
+        fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${id}/author`, options)
+          .then((response) => {
+            if (!response.ok) throw new Error('wallet fetch failed')
+            return response.json()
+          })
+          .then((json) => {
+            setWallet(json)
+          })
+          .catch(() => {})
+      })
+      .catch(() => {})
   }, [token])
 
   async function refreshUserAndWallet() {
