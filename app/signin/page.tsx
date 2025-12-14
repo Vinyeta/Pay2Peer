@@ -4,6 +4,7 @@ import React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "../components/Button"
+import FormFeedback from "../components/FormFeedback"
 import { useAuth } from "../context/AuthContext"
 import jwt from "jsonwebtoken"
 import { useRouter } from "next/navigation"
@@ -13,6 +14,7 @@ export default function SignInPage() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [remember, setRemember] = useState(false)
+  const [feedback, setFeedback] = useState<{ message: string; type?: "error" | "success" } | null>(null)
   const auth = useAuth()
   const router = useRouter()
 
@@ -23,6 +25,7 @@ export default function SignInPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setFeedback(null)
     const body = { email, password }
     const options = {
       method: "POST",
@@ -56,8 +59,10 @@ export default function SignInPage() {
         return
       }
       console.error("Login failed", json)
+      setFeedback({ message: json?.message || "Login failed", type: "error" })
     } catch (error) {
       console.log(error)
+      setFeedback({ message: (error as any)?.message || "Network error", type: "error" })
     } finally {
       setIsLoading(false)
     }
@@ -84,6 +89,7 @@ export default function SignInPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {feedback && <FormFeedback message={feedback.message} type={feedback.type} />}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email address

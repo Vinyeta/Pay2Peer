@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "../context/AuthContext"
 import { useEffect } from "react"
 import { Button } from "../components/Button"
+import FormFeedback from "../components/FormFeedback"
 
 
 export default function SignUpPage() {
@@ -24,6 +25,7 @@ export default function SignUpPage() {
     confirmPassword: "",
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [feedback, setFeedback] = useState<{ message: string; type?: "error" | "success" } | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -34,20 +36,34 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setFeedback(null)
+    if (formData.password !== formData.confirmPassword) {
+      setFeedback({ message: "Passwords do not match", type: "error" })
+      return
+    }
     setIsLoading(true)
-     const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    };
-
-    fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/auth/signUp`, options)
-      .then((response) => response.json())
-      .then(() => router.push("/signin"))
-      .catch((err) => console.error(err))
-      .finally(() => setIsLoading(false))
+    try {
+      const options = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/auth/signUp`, options)
+      const json = await res.json()
+      if (!res.ok) {
+        setFeedback({ message: json?.message || "Signup failed", type: "error" })
+        return
+      }
+      setFeedback({ message: "Account created — redirecting to sign in", type: "success" })
+      setTimeout(() => router.push("/signin"), 800)
+    } catch (err) {
+      console.error(err)
+      setFeedback({ message: (err as any)?.message || "Network error", type: "error" })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -71,6 +87,7 @@ export default function SignUpPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {feedback && <FormFeedback message={feedback.message} type={feedback.type} />}
               <div>
                 <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
                   Full name

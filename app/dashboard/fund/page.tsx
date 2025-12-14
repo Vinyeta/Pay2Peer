@@ -5,6 +5,7 @@ import { Menu } from 'lucide-react'
 import { Sidebar } from "../../components/Sidebar"
 import { UserProfile } from "../../components/UserProfile"
 import { Button } from "../../components/Button"
+import FormFeedback from "../../components/FormFeedback"
 import { useAuth } from "../../context/AuthContext"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js"
@@ -59,6 +60,7 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
   const elements = useElements()
   const auth = useAuth()
   const isMounted = React.useRef(false)
+  const [success, setSuccess] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     isMounted.current = true
@@ -70,6 +72,7 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setSuccess(null)
     const numeric = parseFloat(amount)
     if (isNaN(numeric) || numeric <= 0) return setError("Enter a valid amount")
     if (!stripe || !elements) return setError("Stripe not loaded")
@@ -98,6 +101,7 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
 
       // payment succeeded
       if (isMounted.current) setError(null)
+      if (isMounted.current) setSuccess("Payment successful — funds added to your wallet")
       // inform backend to credit the wallet (returns { success, amount })
       try {
         await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/payments/confirm-payment-intent`, {
@@ -114,7 +118,8 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
       } catch {
             // ignore
           }
-      alert("Payment successful — funds added to your wallet")
+      // show success message briefly
+      // (wallet refreshed above)
     } catch (err: any) {
       console.error(err)
       if (isMounted.current) setError(err?.message ?? "Payment failed")
@@ -141,7 +146,8 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
         <CardElement options={{ hidePostalCode: true }} />
       </div>
 
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {error && <FormFeedback message={error} type="error" />}
+      {success && <FormFeedback message={success} type="success" />}
 
       <Button type="submit" disabled={loading || !stripe} opaque className="py-3 px-6">
         {loading ? "Processing..." : "Pay"}
