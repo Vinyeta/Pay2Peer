@@ -44,7 +44,7 @@ export default function Dashboard() {
               className="lg:col-span-1 space-y-6"
             >
               <BalanceCard balance={269.89} currency="₹" />
-              <UserProfile name="Maria Jay" />
+              <UserProfile />
             </motion.div>
 
             {/* Right Column - Transactions */}

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { UserProfile } from '../../components/UserProfile';
 import { motion } from 'framer-motion';
 import { Sidebar } from '../../components/Sidebar';
 
@@ -9,16 +11,45 @@ export default function SendPage() {
   const [email, setEmail] = useState('');
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setEmail('');
-      setAmount('');
-    }, 1500);
-  };
+  const auth = useAuth()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!auth.token || !auth.wallet?._id) {
+      alert('Not authenticated')
+      return
+    }
+    setIsLoading(true)
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/transactions/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify({
+          sender: auth.wallet._id,
+          receiver: email,
+          amount: amount,
+        }),
+      })
+      if (res.ok) {
+        setEmail('')
+        setAmount('')
+        // optionally refresh auth/wallet
+        auth.refreshUserAndWallet && auth.refreshUserAndWallet()
+      } else {
+        const err = await res.text().catch(() => 'Server error')
+        alert('Error: ' + err)
+      }
+    } catch (err) {
+      alert('Network error')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -27,13 +58,8 @@ export default function SendPage() {
       <main className="flex-1" style={{ marginLeft: sidebarOpen ? '256px' : '80px' }}>
         {/* Top user profile */}
         <div className="flex justify-end items-center p-6 bg-white border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <img
-              src="/diverse-user-avatars.png"
-              alt="User"
-              className="w-10 h-10 rounded-full"
-            />
-            <span className="text-gray-700 font-medium">Maria Jay</span>
+          <div className="w-64">
+            <UserProfile />
           </div>
         </div>
 

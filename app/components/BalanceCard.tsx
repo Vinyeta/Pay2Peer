@@ -1,13 +1,43 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { useEffect, useState } from "react"
+import { useAuth } from "../context/AuthContext"
 
 interface BalanceCardProps {
-  balance: number
-  currency: string
+  balance?: number
+  currency?: string
 }
 
-export function BalanceCard({ balance, currency }: BalanceCardProps) {
+export function BalanceCard({ balance = 0, currency = "€" }: BalanceCardProps) {
+  const auth = useAuth()
+  const [funds, setFunds] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function load() {
+      // prefer the wallet object from auth context
+      if (auth.wallet?.funds) {
+        setFunds(auth.wallet.funds)
+        return
+      }
+      const walletId = auth.wallet?._id
+      if (!walletId || !auth.token) return
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${walletId}/balance`, {
+          headers: { Authorization: `Bearer ${auth.token}` },
+        })
+        if (res.ok) {
+          const text = await res.json()
+          // API returns formatted funds string
+          setFunds(text)
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    load()
+  }, [auth.wallet, auth.token])
+
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
@@ -20,7 +50,7 @@ export function BalanceCard({ balance, currency }: BalanceCardProps) {
         transition={{ duration: 0.5, delay: 0.2 }}
         className="text-5xl font-bold mb-4"
       >
-        {currency} {balance.toFixed(2)}
+        {funds ?? `${currency} ${balance.toFixed(2)}`}
       </motion.h3>
       <p className="text-xs opacity-75">Available balance</p>
     </motion.div>

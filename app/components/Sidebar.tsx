@@ -15,6 +15,7 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
     { label: "Wallet", icon: "👛", href: "/dashboard/wallet" },
     { label: "Send", icon: "📤", href: "/dashboard/send" },
     { label: "Request", icon: "📬", href: "/dashboard/request" },
+    { label: "Fund", icon: "💳", href: "/dashboard/fund" },
     { label: "Account Settings", icon: "⚙️", href: "/dashboard/account-settings" },
   ]
 

@@ -12,8 +12,13 @@ export default function SignInPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [remember, setRemember] = useState(false)
   const auth = useAuth()
   const router = useRouter()
+
+  React.useEffect(() => {
+    if (auth.token) router.push("/dashboard")
+  }, [auth.token, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,6 +39,19 @@ export default function SignInPage() {
         if (decodedId) localStorage.setItem("decodifiedToken", decodedId)
         auth.setToken(json.token)
         if (decodedId) auth.setDecodifiedTokenState(decodedId)
+
+        if (remember) {
+          try {
+            const payload = { token: json.token, id: decodedId }
+            const cookieValue = encodeURIComponent(JSON.stringify(payload))
+            const maxAge = 30 * 24 * 60 * 60 // 30 days
+            const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : ""
+            document.cookie = `auth=${cookieValue}; Path=/; Max-Age=${maxAge}; SameSite=Strict${secure}`
+          } catch (e) {
+            // ignore cookie set errors
+          }
+        }
+
         router.push("/dashboard")
         return
       }
@@ -100,6 +118,8 @@ export default function SignInPage() {
                 <label className="flex items-center">
                   <input
                     type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
                     className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="ml-2 text-sm text-gray-600">Remember me</span>
@@ -112,7 +132,8 @@ export default function SignInPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                opaque
+                className="w-full py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Signing in..." : "Sign in"}
               </Button>

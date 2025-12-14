@@ -5,10 +5,14 @@ import React, { createContext, useContext, useEffect, useState } from "react"
 export type User = {
   _id: string
   name?: string
-  surname?: string
   email?: string
-  avatar?: string
-  trustedContacts?: any[]
+  [key: string]: any
+}
+
+export type Wallet = {
+  _id: string
+  balance?: number
+  author?: string
   [key: string]: any
 }
 
@@ -20,7 +24,7 @@ type AuthContextType = {
   setToken: (token: string) => void
   logout: () => void
   user: User | null
-  walletId: string | null
+  wallet: Wallet | null
   refreshUserAndWallet: () => Promise<void>
 }
 
@@ -45,32 +49,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   })
 
   const [user, setUser] = React.useState<User | null>(null);
-  const [walletId, setWalletId] = React.useState<string | null>(null);
+  const [wallet, setWallet] = React.useState<Wallet | null>(null);
 
   const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
-    try {
-      const options = {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token,
-          },
-        };
-        fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/users/${decodifiedToken}`, options)
-          .then((response) => response.json())
-          .then((json) => setUser(json))
-          .then(() => {
-            fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${decodifiedToken}/author`, options)
-              .then((response) => response.json())
-              .then((json) => {
-                setWalletId(json._id ?? null);
-              });
-          });
-        } catch (e) {
-          console.log(e)
-        }
-  }, [token, decodifiedToken])
+    const options = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+      };
+      fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/users/${decodifiedToken}`, options)
+        .then((response) => response.json())
+        .then((json) => setUser(json))
+        .then(() => {
+          fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${decodifiedToken}/author`, options)
+            .then((response) => response.json())
+            .then((json) => {
+              setWallet(json);
+            });
+        });
+  }, [token])
 
   async function refreshUserAndWallet() {
     if (!token || !decodifiedToken) return
@@ -85,10 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const uRes = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/users/${decodifiedToken}`, options)
       if (uRes.ok) setUser(await uRes.json())
       const wRes = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${decodifiedToken}/author`, options)
-      if (wRes.ok) {
-        const wj = await wRes.json()
-        setWalletId(wj._id ?? null)
-      }
+      if (wRes.ok) setWallet(await wRes.json())
     } catch (e) {
       // ignore
     }
@@ -102,7 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setTokenState(null)
     setUserId(null)
-    setWalletId(null)
     try {
       localStorage.removeItem("token")
       localStorage.removeItem("decodifiedToken")
@@ -117,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     setDecodifiedTokenState,
     user,
-    walletId,
+    wallet,
     refreshUserAndWallet
   }
 

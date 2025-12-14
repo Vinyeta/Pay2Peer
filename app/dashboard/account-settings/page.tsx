@@ -1,19 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { UserProfile } from '../../components/UserProfile'
 import { motion } from 'framer-motion';
 import { Sidebar } from '../../components/Sidebar';
 import { Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext'
 
 export default function AccountSettingsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const auth = useAuth()
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: 'Maria',
-    lastName: 'Jay',
-    email: 'maria@gmail.com',
-    password: '••••••••',
+    email: auth.user?.email ?? '',
+    password: '',
+    verifyPassword: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,10 +28,16 @@ export default function AccountSettingsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // basic validation: passwords must match
+    if (formData.password !== formData.verifyPassword) {
+      alert('Passwords do not match')
+      return
+    }
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-    }, 1500);
+      alert('Saved')
+    }, 800);
   };
 
   return (
@@ -39,13 +47,8 @@ export default function AccountSettingsPage() {
       <main className="flex-1" style={{ marginLeft: sidebarOpen ? '256px' : '80px' }}>
         {/* Top user profile */}
         <div className="flex justify-end items-center p-6 bg-white border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <img
-              src="/diverse-user-avatars.png"
-              alt="User"
-              className="w-10 h-10 rounded-full"
-            />
-            <span className="text-gray-700 font-medium">Maria Jay</span>
+          <div className="w-64">
+            <UserProfile />
           </div>
         </div>
 
@@ -62,55 +65,16 @@ export default function AccountSettingsPage() {
               Edit profile
             </h2>
 
-            {/* Profile picture section */}
-            <div className="flex justify-center mb-8">
-              <div className="relative">
-                <img
-                  src="/diverse-user-avatars.png"
-                  alt="Profile"
-                  className="w-24 h-24 rounded-lg object-cover"
-                />
-                <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-1 border-2 border-white">
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* First and Last Name inputs */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <input
-                    type="text"
-                    name="firstName"
-                    placeholder="First Name"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <input
-                    type="text"
-                    name="lastName"
-                    placeholder="Last Name"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                  />
-                </div>
-              </div>
-
               {/* Email input */}
               <div>
                 <input
                   type="email"
                   name="email"
-                  placeholder="Email"
+                  placeholder={auth.user?.email ?? 'Email'}
                   value={formData.email}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
                 />
               </div>
@@ -120,9 +84,10 @@ export default function AccountSettingsPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="password"
-                  placeholder="Password"
+                  placeholder="New password"
                   value={formData.password}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
                 />
                 <button
@@ -136,6 +101,19 @@ export default function AccountSettingsPage() {
                     <Eye className="w-5 h-5" />
                   )}
                 </button>
+              </div>
+
+              {/* Verify password */}
+              <div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="verifyPassword"
+                  placeholder="Verify password"
+                  value={formData.verifyPassword}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                />
               </div>
 
               {/* Save button */}

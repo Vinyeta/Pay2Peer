@@ -5,11 +5,18 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useAuth } from "../context/AuthContext"
+import { useEffect } from "react"
 import { Button } from "../components/Button"
 
 
 export default function SignUpPage() {
   const router = useRouter()
+  const auth = useAuth()
+
+  useEffect(() => {
+    if (auth.token) router.push("/dashboard")
+  }, [auth.token, router])
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -131,7 +138,8 @@ export default function SignUpPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                opaque
+                className="w-full py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Creating account..." : "Create account"}
               </Button>

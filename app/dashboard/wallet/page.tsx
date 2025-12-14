@@ -3,9 +3,10 @@
 import { Sidebar } from "../../components/Sidebar"
 import { BalanceCard } from "../../components/BalanceCard"
 import { UserProfile } from "../../components/UserProfile"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { ArrowUpRight, ArrowDownLeft } from 'lucide-react'
+import { useAuth } from "../../context/AuthContext"
 
 interface Transaction {
   id: number
@@ -19,23 +20,152 @@ interface Transaction {
 export default function WalletPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [filterType, setFilterType] = useState<"all" | "income" | "outcome">("all")
+  const auth = useAuth()
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
-  const allTransactions: Transaction[] = [
-    { id: 1, date: "26.02.2020", name: "Joe Doe", type: "outcome", amount: -12.34, icon: "down" },
-    { id: 2, date: "26.02.2020", name: "Joe Doe", type: "income", amount: 200.00, icon: "up" },
-    { id: 3, date: "26.02.2020", name: "Joe Doe", type: "outcome", amount: -12.34, icon: "down" },
-    { id: 4, date: "26.02.2020", name: "Joe Doe", type: "income", amount: 200.00, icon: "up" },
-    { id: 5, date: "26.02.2020", name: "Joe Doe", type: "income", amount: 200.00, icon: "up" },
-    { id: 6, date: "26.02.2020", name: "Joe Doe", type: "income", amount: 200.00, icon: "up" },
-    { id: 7, date: "26.02.2020", name: "Joe Doe", type: "outcome", amount: -12.34, icon: "down" },
-    { id: 8, date: "26.02.2020", name: "Joe Doe", type: "outcome", amount: -12.34, icon: "down" },
-    { id: 9, date: "26.02.2020", name: "Joe Doe", type: "income", amount: 200.00, icon: "up" },
-    { id: 10, date: "26.02.2020", name: "Joe Doe", type: "income", amount: 200.00, icon: "up" },
-  ]
+  useEffect(() => {
+    async function loadTxs() {
+      const walletIdCheck = auth.wallet?._id
+      if (!walletIdCheck || !auth.token) return
+      setLoading(true)
+      try {
+        const base = process.env.NEXT_PUBLIC_API_ROOT ?? ''
+        const url = `${base}api/transactions/${walletIdCheck}/all`
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${auth.token}` },
+        })
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '')
+          console.error('Failed to load transactions', res.status, txt)
+          setTransactions([])
+          return
+        }
+        const data = await res.json()
+        // map backend transactions to UI Transaction
+        if (!Array.isArray(data)) {
+          console.error('Transactions payload is not an array', data)
+          setTransactions([])
+          return
+        }
 
-  const filteredTransactions = allTransactions.filter(
-    (t) => filterType === "all" || t.type === filterType
-  )
+        const mapped: Transaction[] = data.map((t: any, idx: number) => {
+          const walletId = walletIdCheck
+          const isSender = t.sender?._id === walletId || t.sender === walletId
+          const counterparty = isSender ? (t.receiver?.author ?? t.receiver) : (t.sender?.author ?? t.sender)
+          let name = counterparty?.name ?? counterparty?.firstName ?? counterparty?.email ?? "Unknown"
+          // If transaction comes from a payment gateway (Stripe), make it explicit
+          const looksLikeStripe = Boolean(t?.stripeSender)
+          if ((name === 'Unknown' || !name) && looksLikeStripe) {
+            if (t.description) name = t.description
+            else if (t.paymentIntent) name = `Top-up (Stripe)`
+            else name = 'Top-up (Stripe)'
+          }
+          // parse numeric amount from formatted string or cents integer
+          const raw = String(t.amount ?? "0")
+          const cleaned = raw.replace(/[^0-9.-]+/g, "")
+          let num = parseFloat(cleaned) || 0
+          // if backend returned cents as an integer string (no decimal point), convert to units
+          if (/^-?\d+$/.test(cleaned)) {
+            num = num / 100
+          }
+          const amount = isSender ? -Math.abs(num) : Math.abs(num)
+          return {
+            id: idx + 1,
+            date: t.date,
+            name,
+            type: isSender ? "outcome" : "income",
+            amount,
+            icon: isSender ? "down" : "up",
+          }
+        })
+        setTransactions(mapped)
+      } catch (e) {
+        console.error('Error loading transactions', e)
+        setTransactions([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadTxs()
+    // mark mounted for client-only formatting
+    setMounted(true)
+    // no incoming requests loaded here; requests moved to dashboard overview
+  }, [auth.wallet, auth.token])
+
+  const filteredTransactions = transactions.filter((t) => filterType === "all" || t.type === filterType)
+
+  // Formatting helpers
+  const formatDate = (d: string) => {
+    // On server render return raw string to keep SSR stable; format only on client
+    if (!mounted) return d
+    try {
+      const date = new Date(d)
+      return new Intl.DateTimeFormat(navigator?.language || 'en-US', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
+    } catch (e) {
+      return d
+    }
+  }
+
+  const formatCurrency = (amount: number, currency = 'USD') => {
+    if (!mounted) return `${amount.toFixed(2)} ${currency}`
+    try {
+      const abs = Math.abs(amount)
+      const formatted = new Intl.NumberFormat(navigator?.language || 'en-US', { style: 'currency', currency }).format(abs)
+      const sign = amount > 0 ? '+' : amount < 0 ? '-' : ''
+      return `${sign}${formatted}`
+    } catch (e) {
+      return `${amount.toFixed(2)} ${currency}`
+    }
+  }
+
+  // Precompute transactions content to simplify JSX and avoid parsing issues
+  const transactionsContent = (() => {
+    if (loading) return <div className="p-4 text-center text-sm text-gray-500">Loading transactions...</div>
+    if (filteredTransactions.length === 0) return <div className="p-4 text-center text-sm text-gray-500">No transactions yet.</div>
+    return filteredTransactions.map((transaction, index) => (
+      <motion.div
+        key={transaction.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        className="flex items-center justify-between p-4 bg-white rounded-lg hover:bg-gray-50 transition-colors border border-gray-100"
+      >
+        <div className="flex items-center gap-6 flex-1">
+          <div className={`p-2 rounded-lg ${
+            transaction.type === "income" ? "bg-cyan-100" : "bg-red-100"
+          }`}>
+            {transaction.icon === "up" ? (
+              <ArrowUpRight className={transaction.type === "income" ? "text-cyan-500" : "text-red-500"} size={20} />
+            ) : (
+              <ArrowDownLeft className={transaction.type === "income" ? "text-cyan-500" : "text-red-500"} size={20} />
+            )}
+          </div>
+
+          <div className="flex gap-8">
+            <span className="text-sm text-gray-600 w-28">{formatDate(transaction.date)}</span>
+            <span className="text-sm font-medium text-gray-900">{transaction.name}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+            transaction.type === "income"
+              ? "bg-cyan-100 text-cyan-600"
+              : "bg-red-100 text-red-600"
+          }`}>
+            {transaction.type === "income" ? "INCOME" : "OUTCOME"}
+          </span>
+          <span className={`font-semibold text-right w-36 ${
+            transaction.type === "income" ? "text-cyan-600" : "text-red-600"
+          }`}>
+            {formatCurrency(transaction.amount)}
+          </span>
+        </div>
+      </motion.div>
+    ))
+  })()
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -46,9 +176,11 @@ export default function WalletPage() {
           {/* Header with User Profile */}
           <div className="w-full flex justify-end mb-8">
             <div className="w-64">
-              <UserProfile name="Maria Jay" />
+              <UserProfile />
             </div>
           </div>
+
+          
 
           <div className="w-full max-w-4xl">
             {/* Balance Card with Add Funds button on top */}
@@ -96,50 +228,7 @@ export default function WalletPage() {
 
               {/* Transactions Table */}
               <div className="space-y-2">
-                {filteredTransactions.map((transaction, index) => (
-                  <motion.div
-                    key={transaction.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="flex items-center justify-between p-4 bg-white rounded-lg hover:bg-gray-50 transition-colors border border-gray-100"
-                  >
-                    <div className="flex items-center gap-6 flex-1">
-                      {/* Icon */}
-                      <div className={`p-2 rounded-lg ${
-                        transaction.type === "income" ? "bg-cyan-100" : "bg-red-100"
-                      }`}>
-                        {transaction.icon === "up" ? (
-                          <ArrowUpRight className={transaction.type === "income" ? "text-cyan-500" : "text-red-500"} size={20} />
-                        ) : (
-                          <ArrowDownLeft className={transaction.type === "income" ? "text-cyan-500" : "text-red-500"} size={20} />
-                        )}
-                      </div>
-
-                      {/* Date and Name */}
-                      <div className="flex gap-8">
-                        <span className="text-sm text-gray-600 w-20">{transaction.date}</span>
-                        <span className="text-sm font-medium text-gray-900">{transaction.name}</span>
-                      </div>
-                    </div>
-
-                    {/* Type Badge and Amount */}
-                    <div className="flex items-center gap-4">
-                      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                        transaction.type === "income"
-                          ? "bg-cyan-100 text-cyan-600"
-                          : "bg-red-100 text-red-600"
-                      }`}>
-                        {transaction.type === "income" ? "INCOME" : "OUTCOME"}
-                      </span>
-                      <span className={`font-semibold text-right w-24 ${
-                        transaction.type === "income" ? "text-cyan-600" : "text-red-600"
-                      }`}>
-                        {transaction.amount > 0 ? "+" : ""}{transaction.amount.toFixed(2)} USD
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                {transactionsContent}
               </div>
 
               {/* Show More Link */}

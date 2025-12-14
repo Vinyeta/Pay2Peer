@@ -5,37 +5,48 @@ import { Sidebar } from "../components/Sidebar"
 import { BalanceCard } from "../components/BalanceCard"
 import { TransactionCard } from "../components/TransactionCard"
 import { UserProfile } from "../components/UserProfile"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useAuth } from "../context/AuthContext"
 
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
-  const pendingTransactions = [
-    {
-      id: 1,
-      recipient: "John",
-      amount: 12.60,
-      status: "pending" as const,
-    },
-    {
-      id: 2,
-      recipient: "Jay",
-      amount: 12.60,
-      status: "pending" as const,
-    },
-    {
-      id: 3,
-      recipient: "Maria",
-      amount: 12.60,
-      status: "pending" as const,
-    },
-    {
-      id: 4,
-      recipient: "Laura",
-      amount: 12.60,
-      status: "pending" as const,
-    },
-  ]
+  const auth = useAuth()
+  const [requests, setRequests] = useState<any[]>([])
+  const [loadingRequests, setLoadingRequests] = useState(true)
+
+  useEffect(() => {
+    if (!auth.decodifiedToken) {
+      setRequests([])
+      setLoadingRequests(false)
+      return
+    }
+
+    setLoadingRequests(true)
+    const options = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + (auth.token ?? ""),
+      },
+    }
+
+    fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/${auth.decodifiedToken}/user`, options)
+      .then((res) => res.json())
+      .then((json) => {
+        if (Array.isArray(json)) {
+          // keep only pending requests
+          setRequests(json.filter((r) => r?.status === "pending"))
+        } else setRequests([])
+      })
+      .catch((err) => {
+        console.error("failed to load requests", err)
+        setRequests([])
+      })
+      .finally(() => setLoadingRequests(false))
+
+  }, [auth.decodifiedToken, auth.token])
+
+  // `TransactionCard` will perform the PATCH; parent receives updates via `onStatusUpdated` callback below.
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -50,7 +61,7 @@ export default function DashboardPage() {
               <p className="text-gray-600">Get a summary of your transactions and requests here</p>
             </div>
             <div className="w-64">
-              <UserProfile name="Maria Jay" />
+              <UserProfile />
             </div>
           </div>
 
@@ -67,13 +78,57 @@ export default function DashboardPage() {
             <div className="flex-1 flex flex-col items-end">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 w-80">Pending Requests</h2>
               <div className="w-80 space-y-4">
-                {pendingTransactions.map((transaction, index) => (
-                  <TransactionCard
-                    key={transaction.id}
-                    transaction={transaction}
-                    delay={index * 0.1}
-                  />
-                ))}
+                {loadingRequests ? (
+                  <div className="text-sm text-gray-500">Loading requests...</div>
+                ) : requests.length === 0 ? (
+                  <div className="text-sm text-gray-500">No pending requests</div>
+                ) : (
+                  requests.map((req, index) => {
+                    const senderAuthor = req?.sender?.author
+                    const recipient = senderAuthor ? `${senderAuthor.name ?? ""} ${senderAuthor.surname ?? ""}`.trim() : (req?.sender?.email ?? "Unknown")
+                    // normalize amount: backend may store cents as integer (e.g. 1260) or formatted string
+                    const raw = req?.amount ?? "0"
+                    let amount = 0
+                    try {
+                      if (typeof raw === "string") {
+                        const cleaned = raw.replace(/[^0-9.-]+/g, "")
+                        amount = parseFloat(cleaned) || 0
+                        // if the backend returned an integer-like value (no decimal point) and it's large,
+                        // assume it's cents and divide by 100
+                        if (!cleaned.includes(".") && Math.abs(amount) >= 100) {
+                          amount = amount / 100
+                        }
+                      } else if (typeof raw === "number") {
+                        amount = raw
+                        if (!String(raw).includes(".") && Math.abs(raw) >= 100) {
+                          amount = raw / 100
+                        }
+                      }
+                    } catch (e) {
+                      amount = 0
+                    }
+
+                    const status = req?.status === "pending" ? "pending" : "completed"
+                    return (
+                      <TransactionCard
+                        key={req._id ?? index}
+                        transaction={{ id: index + 1, recipient, amount, status }}
+                        delay={index * 0.1}
+                        currency="€"
+                        metaId={req._id}
+                        onStatusUpdated={(id, newStatus) => {
+                          if (!id || !newStatus) return
+                          // only show pending requests in the dashboard; remove when status changes
+                          if (newStatus !== "pending") {
+                            setRequests((prev) => prev.filter((r) => r._id !== id))
+                          } else {
+                            setRequests((prev) => prev.map((r) => (r._id === id ? { ...r, status: newStatus } : r)))
+                          }
+                        }}
+                      />
+                    )
+                  })
+                )}
               </div>
             </div>
           </div>

@@ -8,3 +8,5 @@
 /.next
 
 .env.local
+
+/Pay2Peer.code-workspace
