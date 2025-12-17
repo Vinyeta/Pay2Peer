@@ -154,17 +154,6 @@ export default function SignInPage() {
               </p>
             </div>
           </div>
-
-          <p className="text-center text-sm text-gray-500 mt-8">
-            By signing in, you agree to our{" "}
-            <Link href="/terms" className="text-gray-700 hover:text-gray-900">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="text-gray-700 hover:text-gray-900">
-              Privacy Policy
-            </Link>
-          </p>
         </div>
       </main>
     </div>
