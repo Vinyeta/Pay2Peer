@@ -45,71 +45,36 @@
 ## 6. Arquitectura del sistema
 
 ### Visión general
-Cliente: Next.js, Tailwind — Backend: Node.js/Express — BD: MongoDB — Servicios: Stripe.
+Cliente: Next.js — Backend: Node.js/Express — BD: MongoDB — Servicios: Stripe.
 
-### Componentes principales
-- Frontend: `app/` con `AuthContext`, `CheckoutForm`, `StripeClient`.
-- Backend: `Pay2Peer-Node` con rutas de pagos en `src/resources/stripe`.
-- Persistencia: colecciones `users`, `wallets`, `transactions`.
+### FrontEnd
+- En FrontEnd se ha usado Next.js como framework principal.En un principio se iba a usar React pero los cambios que ha habido durante los últimos años en React y mi mayor familiaridad con Next.js recientemente me hicieron cambiar a este último nada más empezar el proyecto. Next.js es un framework de Reacy.
+- Para css se ha usado Tailwind debido a la incomodidad de tener que gestionar multiples archivos css, especialmente usando un framework basado en componentes que son muy propensos a errores de css debido a cascadas de imports y ofuscando el css.
+- Se ha utilizado tambien rechart para las gráficas del dashboard, varias librerias adicionales de React, en particular react-stripe-js para incluir una pasarelar de pago de tarjetas como método de introducir dinero a la app.
+- Se ha usado jsonwebtoken para gestionar el token de autenticación que tiene encriptado el id del usuario necesario para las llamadas a la API.
 
-### Flujo de pagos (resumen)
-1. El frontend realiza un POST a `/api/payments/create-payment-intent` con `amount`.
-2. El backend crea el PaymentIntent y devuelve `clientSecret`.
-3. El frontend llama a `stripe.confirmCardPayment(clientSecret, { payment_method: { card } })`.
-4. El backend verifica el resultado y actualiza `Wallet` y `Transaction`.
-
-### Modelos clave
-- `User`: `_id`, `email`, `name`, `passwordHash`, `createdAt`.
-- `Wallet`: `_id`, `userId`, `funds` (string decimal), `currency`, `updatedAt`.
-- `Transaction`: `_id`, `walletId`, `type`, `amount`, `currency`, `stripePaymentIntentId`, `status`, `createdAt`.
-
----
-
-## 7. Diseño e implementación
-
-### Frontend
-- `app/context/AuthContext.tsx`: centraliza el token, el usuario y la wallet.
-- `app/dashboard/fund/page.tsx`: `CheckoutForm` que consume `StripeClient`.
-- `app/dashboard/fund/StripeClient.tsx`: monta Stripe Elements en cliente y maneja remount/retry.
 
 ### Backend
-- Endpoints principales: `create-payment-intent`, `confirm-payment-intent`, `ready`.
-- `stripe.controller.js`: crea y verifica PaymentIntents; actualiza `Wallet` y `Transaction`.
+- Express.js se ha escogido como framework de backend debido a mi familiaridad con el mismo y se ha construiod una API. Para los logs de las llamadas a la API se ha instalado morgan, y mongoose para conectar con la base de datos de Mongo. Dotenv se encarga de leer las variables de entorno que no deben ser publicas, como API keys, de un archivo .env.
+- Nodemon y cors se han usado para facilitar el desarrollo, uno para poder hacer cambios en caliente y probarlos de inmediato y el otro para usar una politica no restrictiva de cors en desarrollo.
+- Se ha usado bcrypt para encriptar las contraseñas con el algoritmo EksBlowfish.
+- Para proteger los endpoints que requieren autenticación se ha usado express-jwt y para limpiar y validar las requests express-validator.
+- Stripe se ha usado para procesar los pagos a la aplicación a través de tarjetas y se ha usado currency.js para formatos de moneda. Se trabaja en céntimos para evitar errores de redondeo.
+- Sendgrid se ha usado como plataforma de mailing para emails de bienvenida al registrarse y emails de restaurar contraseña.
+- RabbitMQ se ha usado para gestionar colas. Estas colas son un middleware que  gestiona peticiones a la API y las guarda en caso de que no pueda procesarlas la API para evitar que haya perdidas de información.
 
-### Normalización de importes
-- Usar céntimos (enteros) para llamadas a Stripe; almacenar en la BD como string/decimal con dos decimales.
+
+### Base de datos
+- Se ha usado Mongo debido a su flexibilidad para un desarrollo rápido ya que aún no tengo claro que estructuras serán necesarias para securizar la web y hacer cambios en una base de datos SQL es mucho más complicado. Una vez haya un diseño definitivo para la base de datos se migrará a PostgreSQL.
 
 ---
 
-## 8. Seguridad y privacidad
-- Autenticación con JWT; `Authorization: Bearer <token>` en peticiones protegidas.
-- Validaciones y saneamiento de `amount` en frontend y backend.
-- No exponer `STRIPE_API_KEY` en el cliente.
-
----
-
-## 9. Despliegue
-Variables de entorno principales:
-- Backend: `STRIPE_API_KEY`, `JWT_SECRET`, `MONGO_URI`.
-- Frontend: `NEXT_PUBLIC_API_ROOT`, `NEXT_PUBLIC_STRIPE_PK`.
-
-Build Frontend:
-```bash
-npm install
-npm run build
-npm run start
-```
-Build Backend:
-```bash
-npm install
-npm run start
-```
-## 10. Conclusiones
+## 7. Conclusiones
 
 - Se han alcanzado los objetivos de la primera fase, pero por restricciones de tiempo debidas a imprevistos no se ha podido implementar la seguridad ni la base de datos con una visión a futuro, por lo que será necesario refactorizar muchas partes en la segunda fase. Además, existe un bug errático en el formulario proporcionado por Stripe que no se ha conseguido depurar a tiempo para la primera fase.
 - Ha habido una investigación sobre cómo securizar y desplegar correctamente el proyecto, por lo que se ha producido un aprendizaje en ese aspecto. Sin embargo, la primera fase del proyecto es meramente la infraestructura necesaria para poder empezar la parte más difícil del proyecto: la securización y la creación de la infraestructura de despliegue.
 
-## 11. Trabajo futuro
+## 8. Trabajo futuro
 
 - **Mejoras prioritarias:**
   - Testing.
