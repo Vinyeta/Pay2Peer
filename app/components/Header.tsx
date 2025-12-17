@@ -18,17 +18,7 @@ export function Header() {
           <Image src="/unnamed.png" alt="Pay2Peer Logo" width={70} height={24} priority className="block" />
         </Link>
 
-        <nav className="hidden md:flex gap-8 items-center">
-          <Link href="/about" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-            About
-          </Link>
-          <Link href="/pricing" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-            Pricing
-          </Link>
-          <Link href="/contact" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-            Contact
-          </Link>
-        </nav>
+        {/* header links removed: About, Pricing, Contact */}
 
         <div className="flex gap-3 items-center">
           <Link href="/signin">

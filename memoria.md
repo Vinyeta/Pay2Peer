@@ -18,24 +18,19 @@
 - 3. Índice
 - 4. Introducción
 - 5. Objetivos
-- 6. Requisitos
-  - 6.1 Requisitos funcionales
-  - 6.2 Requisitos no funcionales
-  - 6.3 Criterios de aceptación
-  - 6.4 Contratos de API
-- 7. Arquitectura del sistema
+- 6. Arquitectura del sistema
   - Visión general
   - Componentes principales
   - Flujo de pagos
   - Modelos clave
-- 8. Diseño e implementación
+- 7. Diseño e implementación
   - Frontend
   - Backend
   - Normalización de importes
-- 9. Seguridad y privacidad
-- 10. Despliegue
-- 11. Conclusiones
-- 12. Trabajo futuro
+- 8. Seguridad y privacidad
+- 9. Despliegue
+- 10. Conclusiones
+- 11. Trabajo futuro
 
 ## 4. Introducción
 - Este proyecto se inició para el curso de ASIR con especialización en ciberseguridad como proyecto de final de ciclo. La idea del proyecto viene de un proyecto de aprendizaje de React realizado anteriormente, en el que solo se creó un MVP con la funcionalidad básica para una demo. Es un proyecto que hasta ahora no he podido desarrollar más y este ciclo me ha dado la oportunidad de hacerlo, complementando mis conocimientos de desarrollo web con conocimientos de sistemas, redes y ciberseguridad para poder llevar este proyecto a término.
@@ -46,46 +41,11 @@
 - **Objetivo general:** construir una aplicación segura y conforme a los requisitos legales para gestionar saldos y transferencias.
 - **Objetivos específicos:** autenticación, persistencia de sesión, integración con Stripe, trazabilidad de transacciones y pruebas E2E.
 
-## 6. Requisitos
 
-### 6.1 Requisitos funcionales (RF)
-- RF01 — Registro de usuario: `POST /api/users` → 201 + `{ user }`.
-- RF02 — Autenticación: `POST /api/auth/login` → 200 + `{ token }`.
-- RF03 — Persistencia de sesión: token en `localStorage`; `AuthContext` expone `token`, `user`, `logout` y `refreshUserAndWallet`.
-- RF04 — Ver saldo y transacciones: `GET /api/wallets/:userId`, `GET /api/transactions`.
-- RF05 — Recarga (pagos): el frontend solicita `POST /api/payments/create-payment-intent { amount }` y confirma con Stripe usando `clientSecret`.
-- RF06 — Confirmación y contabilización: `POST /api/payments/confirm-payment-intent { paymentIntentId }` actualiza `Wallet` y crea `Transaction`.
-
-### 6.2 Requisitos no funcionales (RNF)
-- RNF01 — Seguridad: delegar la tokenización de tarjetas a Stripe; TLS en producción; no almacenar datos de tarjetas.
-- RNF02 — Rendimiento: TTFB < 300 ms en staging para dashboard; creación de PaymentIntent < 3 s en condiciones normales.
-- RNF03 — Disponibilidad: uso de colas para la persistencia de peticiones.
-
-### 6.3 Criterios de aceptación (QA)
-- CA01 — Flujo de recarga completo con tarjeta de prueba en Stripe.
-- CA02 — Mensajes de error apropiados y sin exposición de datos sensibles.
-- CA03 — Remount/retry del `CardElement` en errores `Element destroyed`.
-
-### 6.4 Contratos de API (ejemplos)
-- `POST /api/payments/create-payment-intent`
-  - Request: `{ "amount": number }` (euros)
-  - Response: `{ "clientSecret": string, "id": string, "amount": number }`
-- `POST /api/payments/confirm-payment-intent`
-  - Request: `{ "paymentIntentId": string }`
-  - Response: `{ "success": boolean, "walletId"?: string, "amount"?: number }`
-- `GET /api/payments/ready`
-  - Response: `{ "ready": boolean }`
-
-### 6.5 Restricciones
-- No almacenar datos de tarjetas; usar Stripe Elements.
-- Secretos en variables de entorno (`STRIPE_API_KEY`, `JWT_SECRET`).
-
----
-
-## 7. Arquitectura del sistema
+## 6. Arquitectura del sistema
 
 ### Visión general
-Cliente: Next.js (App Router) — Backend: Node.js/Express — BD: MongoDB — Servicios: Stripe.
+Cliente: Next.js, Tailwind — Backend: Node.js/Express — BD: MongoDB — Servicios: Stripe.
 
 ### Componentes principales
 - Frontend: `app/` con `AuthContext`, `CheckoutForm`, `StripeClient`.
@@ -105,7 +65,7 @@ Cliente: Next.js (App Router) — Backend: Node.js/Express — BD: MongoDB — S
 
 ---
 
-## 8. Diseño e implementación
+## 7. Diseño e implementación
 
 ### Frontend
 - `app/context/AuthContext.tsx`: centraliza el token, el usuario y la wallet.
@@ -121,14 +81,14 @@ Cliente: Next.js (App Router) — Backend: Node.js/Express — BD: MongoDB — S
 
 ---
 
-## 9. Seguridad y privacidad
+## 8. Seguridad y privacidad
 - Autenticación con JWT; `Authorization: Bearer <token>` en peticiones protegidas.
 - Validaciones y saneamiento de `amount` en frontend y backend.
 - No exponer `STRIPE_API_KEY` en el cliente.
 
 ---
 
-## 10. Despliegue
+## 9. Despliegue
 Variables de entorno principales:
 - Backend: `STRIPE_API_KEY`, `JWT_SECRET`, `MONGO_URI`.
 - Frontend: `NEXT_PUBLIC_API_ROOT`, `NEXT_PUBLIC_STRIPE_PK`.
@@ -144,12 +104,12 @@ Build Backend:
 npm install
 npm run start
 ```
-## 11. Conclusiones
+## 10. Conclusiones
 
 - Se han alcanzado los objetivos de la primera fase, pero por restricciones de tiempo debidas a imprevistos no se ha podido implementar la seguridad ni la base de datos con una visión a futuro, por lo que será necesario refactorizar muchas partes en la segunda fase. Además, existe un bug errático en el formulario proporcionado por Stripe que no se ha conseguido depurar a tiempo para la primera fase.
 - Ha habido una investigación sobre cómo securizar y desplegar correctamente el proyecto, por lo que se ha producido un aprendizaje en ese aspecto. Sin embargo, la primera fase del proyecto es meramente la infraestructura necesaria para poder empezar la parte más difícil del proyecto: la securización y la creación de la infraestructura de despliegue.
 
-## 12. Trabajo futuro
+## 11. Trabajo futuro
 
 - **Mejoras prioritarias:**
   - Testing.
