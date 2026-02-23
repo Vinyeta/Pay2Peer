@@ -32,9 +32,9 @@ export default function TransactionsHistogram({ walletId, token, days = 7 }: Pro
   useEffect(() => {
     let mounted = true
     async function load() {
-      if (!walletId || !token) return
+      if (!token) return
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/transactions/${walletId}/lastWeek`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/transactions/me/lastWeek`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (!mounted) return

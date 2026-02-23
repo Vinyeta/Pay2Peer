@@ -6,7 +6,6 @@ import Link from "next/link"
 import { Button } from "../components/Button"
 import FormFeedback from "../components/FormFeedback"
 import { useAuth } from "../context/AuthContext"
-import jwt from "jsonwebtoken"
 import { useRouter } from "next/navigation"
 
 export default function SignInPage() {
@@ -37,16 +36,14 @@ export default function SignInPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/auth/login`, options)
       const json = await response.json()
       if (json?.token) {
-        localStorage.setItem("token", json.token)
-        const decodedId = jwt.decode(json.token)?._id
-        if (decodedId) localStorage.setItem("decodifiedToken", decodedId)
         auth.setToken(json.token)
-        if (decodedId) auth.setDecodifiedTokenState(decodedId)
+        if (json.refreshToken) {
+          auth.setRefreshToken(json.refreshToken)
+        }
 
         if (remember) {
           try {
-            const payload = { token: json.token, id: decodedId }
-            const cookieValue = encodeURIComponent(JSON.stringify(payload))
+            const cookieValue = encodeURIComponent(JSON.stringify({ token: json.token }))
             const maxAge = 30 * 24 * 60 * 60 // 30 days
             const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : ""
             document.cookie = `auth=${cookieValue}; Path=/; Max-Age=${maxAge}; SameSite=Strict${secure}`

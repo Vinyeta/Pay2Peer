@@ -21,9 +21,9 @@ export function BalanceCard({ balance = 0, currency = "€" }: BalanceCardProps)
         return
       }
       const walletId = auth.wallet?._id
-      if (!walletId || !auth.token) return
+      if (!auth.token) return
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${walletId}/balance`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/me/balance`, {
           headers: { Authorization: `Bearer ${auth.token}` },
         })
         if (res.ok) {

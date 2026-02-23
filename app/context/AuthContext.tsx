@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState, useRef } from "react"
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from "react"
 
 export type User = {
   _id: string
@@ -18,29 +18,38 @@ export type Wallet = {
 
 type AuthContextType = {
   token: string | null
-  userId: string | null
-  decodifiedToken: string | null
-  setDecodifiedTokenState: (decodifiedToken: string) => void
   setToken: (token: string) => void
+  setRefreshToken: (rt: string) => void
   logout: () => void
   user: User | null
   wallet: Wallet | null
   refreshUserAndWallet: () => Promise<void>
+  authFetch: (url: string, options?: RequestInit) => Promise<Response>
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const API_ROOT = process.env.NEXT_PUBLIC_API_ROOT ?? ""
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setTokenState] = useState<string | null>(null)
-
-  const [decodifiedToken, setDecodifiedTokenState] = useState<string | null>(null)
+  const [refreshTokenValue, setRefreshTokenValue] = useState<string | null>(null)
 
   const [user, setUser] = React.useState<User | null>(null);
   const [wallet, setWallet] = React.useState<Wallet | null>(null);
 
-  const [userId, setUserId] = useState<string | null>(null)
   const mountedRef = useRef(false)
 
-  // Hydrate token and decodifiedToken from localStorage on mount
+  // Keep a ref to the latest token/refreshToken so async callbacks always see current values
+  const tokenRef = useRef(token)
+  const refreshTokenRef = useRef(refreshTokenValue)
+  useEffect(() => { tokenRef.current = token }, [token])
+  useEffect(() => { refreshTokenRef.current = refreshTokenValue }, [refreshTokenValue])
+
+  // Flag to prevent multiple simultaneous refresh attempts
+  const isRefreshing = useRef(false)
+  const refreshPromise = useRef<Promise<string | null> | null>(null)
+
+  // Hydrate token and refreshToken from localStorage on mount
   useEffect(() => {
     mountedRef.current = true
     try {
@@ -48,8 +57,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (t) setTokenState(t)
     } catch {}
     try {
-      const d = localStorage.getItem('decodifiedToken')
-      if (d) setDecodifiedTokenState(d)
+      const rt = localStorage.getItem('refreshToken')
+      if (rt) setRefreshTokenValue(rt)
     } catch {}
 
     return () => {
@@ -57,8 +66,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // ── Token refresh logic ──────────────────────────────────────────────
+  const doRefresh = useCallback(async (): Promise<string | null> => {
+    const rt = refreshTokenRef.current
+    if (!rt) return null
+
+    if (isRefreshing.current && refreshPromise.current) {
+      return refreshPromise.current
+    }
+
+    isRefreshing.current = true
+    refreshPromise.current = (async () => {
+      try {
+        const res = await fetch(`${API_ROOT}api/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken: rt }),
+        })
+        if (!res.ok) {
+          doLogout()
+          return null
+        }
+        const data = await res.json()
+        if (data.token && data.refreshToken) {
+          setTokenState(data.token)
+          tokenRef.current = data.token
+          try { localStorage.setItem("token", data.token) } catch {}
+
+          setRefreshTokenValue(data.refreshToken)
+          refreshTokenRef.current = data.refreshToken
+          try { localStorage.setItem("refreshToken", data.refreshToken) } catch {}
+
+          return data.token as string
+        }
+        doLogout()
+        return null
+      } catch {
+        doLogout()
+        return null
+      } finally {
+        isRefreshing.current = false
+        refreshPromise.current = null
+      }
+    })()
+
+    return refreshPromise.current
+  }, [])
+
+  // ── authFetch: wrapper that auto-retries on 401 with refresh ────────
+  const authFetch = useCallback(async (url: string, options: RequestInit = {}): Promise<Response> => {
+    const headers = new Headers(options.headers || {})
+    if (tokenRef.current) {
+      headers.set("Authorization", `Bearer ${tokenRef.current}`)
+    }
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json")
+    }
+
+    let res = await fetch(url, { ...options, headers })
+
+    if (res.status === 401 && refreshTokenRef.current) {
+      const newToken = await doRefresh()
+      if (newToken) {
+        headers.set("Authorization", `Bearer ${newToken}`)
+        res = await fetch(url, { ...options, headers })
+      }
+    }
+
+    return res
+  }, [doRefresh])
+
+  // Fetch user and wallet via /me endpoints when token changes
   useEffect(() => {
-    // If there's no token clear user state
     if (!token) {
       if (mountedRef.current) {
         setUser(null)
@@ -67,49 +146,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // Ensure we have a decoded id (decodifiedToken). If missing, try decoding from JWT.
-    let id = decodifiedToken
-    if (!id) {
-      try {
-        const parts = token.split('.')
-        if (parts.length >= 2) {
-          const payload = parts[1]
-          // base64url -> base64
-          const b64 = payload.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice((payload.length + 3) % 4)
-          const decoded = JSON.parse(atob(b64))
-          id = decoded?._id || decoded?.id || null
-          if (id && mountedRef.current) {
-            setDecodifiedTokenState(id)
-            try { localStorage.setItem('decodifiedToken', id) } catch {}
-          }
-        }
-      } catch {
-        // ignore decode errors
-      }
-    }
-
-    if (!id) return
-
-    const options = {
+    const opts = {
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + token,
       },
     }
 
-    // fetch user and wallet for this id
-    fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/users/${id}`, options)
-      .then((response) => {
-        if (!response.ok) throw new Error('user fetch failed')
-        return response.json()
-      })
+    fetch(`${API_ROOT}api/users/me`, opts)
+      .then((r) => { if (!r.ok) throw new Error('user fetch failed'); return r.json() })
       .then((json) => { if (mountedRef.current) setUser(json) })
       .then(() => {
-        fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${id}/author`, options)
-          .then((response) => {
-            if (!response.ok) throw new Error('wallet fetch failed')
-            return response.json()
-          })
+        fetch(`${API_ROOT}api/wallet/me`, opts)
+          .then((r) => { if (!r.ok) throw new Error('wallet fetch failed'); return r.json() })
           .then((json) => { if (mountedRef.current) setWallet(json) })
           .catch(() => {})
       })
@@ -117,51 +166,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token])
 
   async function refreshUserAndWallet() {
-    if (!token || !decodifiedToken) return
-    const options = {
+    if (!token) return
+    const opts = {
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + token,
       },
     }
-
     try {
-      const uRes = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/users/${decodifiedToken}`, options)
+      const uRes = await fetch(`${API_ROOT}api/users/me`, opts)
       if (uRes.ok && mountedRef.current) setUser(await uRes.json())
-      const wRes = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${decodifiedToken}/author`, options)
+      const wRes = await fetch(`${API_ROOT}api/wallet/me`, opts)
       if (wRes.ok && mountedRef.current) setWallet(await wRes.json())
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
   const setToken = (t: string) => {
     setTokenState(t)
-    try {
-      localStorage.setItem('token', t)
-    } catch {}
-    // effect will pick this up and persist / decode
+    try { localStorage.setItem('token', t) } catch {}
   }
 
-  const logout = () => {
+  const setRefreshToken = (rt: string) => {
+    setRefreshTokenValue(rt)
+    try { localStorage.setItem('refreshToken', rt) } catch {}
+  }
+
+  const doLogout = () => {
+    const rt = refreshTokenRef.current
+    if (rt) {
+      fetch(`${API_ROOT}api/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken: rt }),
+      }).catch(() => {})
+    }
     setTokenState(null)
-    setUserId(null)
+    setRefreshTokenValue(null)
+    tokenRef.current = null
+    refreshTokenRef.current = null
     try {
       localStorage.removeItem("token")
-      localStorage.removeItem("decodifiedToken")
+      localStorage.removeItem("refreshToken")
     } catch {}
   }
+
+  const logout = doLogout
 
   const value: AuthContextType = {
     token,
-    userId,
-    decodifiedToken,
     setToken,
+    setRefreshToken,
     logout,
-    setDecodifiedTokenState,
     user,
     wallet,
-    refreshUserAndWallet
+    refreshUserAndWallet,
+    authFetch,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -28,12 +28,11 @@ export default function WalletPage() {
 
   useEffect(() => {
     async function loadTxs() {
-      const walletIdCheck = auth.wallet?._id
-      if (!walletIdCheck || !auth.token) return
+      if (!auth.token) return
       setLoading(true)
       try {
         const base = process.env.NEXT_PUBLIC_API_ROOT ?? ''
-        const url = `${base}api/transactions/${walletIdCheck}/all`
+        const url = `${base}api/transactions/me/all`
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${auth.token}` },
         })
@@ -52,7 +51,7 @@ export default function WalletPage() {
         }
 
         const mapped: Transaction[] = data.map((t: any, idx: number) => {
-          const walletId = walletIdCheck
+          const walletId = auth.wallet?._id
           const isSender = t.sender?._id === walletId || t.sender === walletId
           const counterparty = isSender ? (t.receiver?.author ?? t.receiver) : (t.sender?.author ?? t.sender)
           let name = counterparty?.name ?? counterparty?.firstName ?? counterparty?.email ?? "Unknown"

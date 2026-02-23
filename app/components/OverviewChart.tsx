@@ -35,9 +35,9 @@ export default function OverviewChart({ walletId, token, days = 7 }: Props) {
   useEffect(() => {
     let mounted = true
     async function load() {
-      if (!walletId || !token) return
+      if (!token) return
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/${walletId}/histogram`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/me/histogram`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (!mounted) return
