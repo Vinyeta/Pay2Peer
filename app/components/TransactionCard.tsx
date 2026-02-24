@@ -48,12 +48,8 @@ export function TransactionCard({ transaction, delay, currency = "€", metaId, 
                 if (busy || !metaId || !auth.token) return
                 setBusy(true)
                 try {
-                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/${metaId}`, {
+                  const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/${metaId}`, {
                     method: "PATCH",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `Bearer ${auth.token}`,
-                    },
                     body: JSON.stringify({ status: "accepted" }),
                   })
                   if (!res.ok) {
@@ -85,12 +81,8 @@ export function TransactionCard({ transaction, delay, currency = "€", metaId, 
                 if (busy || !metaId || !auth.token) return
                 setBusy(true)
                 try {
-                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/${metaId}`, {
+                  const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/${metaId}`, {
                     method: "PATCH",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `Bearer ${auth.token}`,
-                    },
                     body: JSON.stringify({ status: "rejected" }),
                   })
                   if (!res.ok) {

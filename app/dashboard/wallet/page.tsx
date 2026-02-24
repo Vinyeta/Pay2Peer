@@ -33,9 +33,7 @@ export default function WalletPage() {
       try {
         const base = process.env.NEXT_PUBLIC_API_ROOT ?? ''
         const url = `${base}api/transactions/me/all`
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${auth.token}` },
-        })
+        const res = await auth.authFetch(url)
         if (!res.ok) {
           const txt = await res.text().catch(() => '')
           console.error('Failed to load transactions', res.status, txt)

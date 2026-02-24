@@ -6,11 +6,14 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "test:e2e": "npx playwright test"
   },
   "dependencies": {
     "@tailwindcss/vite": "latest",
+    "@vercel/analytics": "^1.6.1",
     "framer-motion": "latest",
+    "geist": "^1.7.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.454.0",
     "next": "15.5.4",
@@ -21,6 +24,7 @@
     "vite-tsconfig-paths": "latest"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",
     "@types/react": "^18",

@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts"
+import { useAuth } from "../context/AuthContext"
 
 type Tx = {
   amount: number | string
@@ -19,7 +20,6 @@ type Tx = {
 
 type Props = {
   walletId?: string | null
-  token?: string | null
   days?: number
 }
 
@@ -29,17 +29,16 @@ function dayNameFromIndex(idx: number) {
   return DAY_NAMES[idx % 7] ?? String(idx)
 }
 
-export default function OverviewChart({ walletId, token, days = 7 }: Props) {
+export default function OverviewChart({ walletId, days = 7 }: Props) {
+  const auth = useAuth()
   const [txs, setTxs] = useState<Tx[]>([])
 
   useEffect(() => {
     let mounted = true
     async function load() {
-      if (!token) return
+      if (!auth.token) return
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/me/histogram`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/me/histogram`)
         if (!mounted) return
         if (!res.ok) return
         const json = await res.json()
@@ -60,7 +59,7 @@ export default function OverviewChart({ walletId, token, days = 7 }: Props) {
     return () => {
       mounted = false
     }
-  }, [walletId, token])
+  }, [walletId, auth.token])
 
   const data = useMemo(() => {
     // Map histogram txs into { date: 'Mon', amount }

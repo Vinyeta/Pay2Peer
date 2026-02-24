@@ -47,15 +47,8 @@ export default function DashboardPage() {
         return
       }
 
-      const options = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + (auth.token ?? ""),
-        },
-      }
-
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/${id}/user`, options)
+        const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/${id}/user`)
         if (!mounted) return
         const json = await res.json()
         if (Array.isArray(json)) {
@@ -108,10 +101,10 @@ export default function DashboardPage() {
               </div>
               <div className="max-w-4xl m-auto flex flex-col md:flex-row gap-4 items-stretch">
                 <div className="w-full md:w-1/2">
-                  <OverviewChart walletId={auth.wallet?._id ?? null} token={auth.token ?? null} days={7} />
+                  <OverviewChart walletId={auth.wallet?._id ?? null} days={7} />
                 </div>
                 <div className="w-full md:w-1/2">
-                  <TransactionsHistogram walletId={auth.wallet?._id ?? null} token={auth.token ?? null} days={7} />
+                  <TransactionsHistogram walletId={auth.wallet?._id ?? null} days={7} />
                 </div>
               </div>
             </div>

@@ -24,12 +24,8 @@ export default function SendPage() {
     }
     setIsLoading(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/transactions/`, {
+      const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/transactions/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${auth.token}`,
-        },
         body: JSON.stringify({
           sender: auth.wallet._id,
           receiver: email,

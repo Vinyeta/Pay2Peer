@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts"
+import { useAuth } from "../context/AuthContext"
 
 type Tx = {
   amount: number | string
@@ -18,7 +19,6 @@ type Tx = {
 
 type Props = {
   walletId?: string | null
-  token?: string | null
   days?: number
 }
 
@@ -26,17 +26,16 @@ function formatDate(d: Date) {
   return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
-export default function TransactionsHistogram({ walletId, token, days = 7 }: Props) {
+export default function TransactionsHistogram({ walletId, days = 7 }: Props) {
+  const auth = useAuth()
   const [txs, setTxs] = useState<Tx[]>([])
 
   useEffect(() => {
     let mounted = true
     async function load() {
-      if (!token) return
+      if (!auth.token) return
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/transactions/me/lastWeek`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/transactions/me/lastWeek`)
         if (!mounted) return
         if (!res.ok) return
         const json = await res.json()
@@ -54,7 +53,7 @@ export default function TransactionsHistogram({ walletId, token, days = 7 }: Pro
     return () => {
       mounted = false
     }
-  }, [walletId, token])
+  }, [walletId, auth.token])
 
   const data = useMemo(() => {
     // Build labels oldest->newest for last `days` days

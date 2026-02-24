@@ -22,12 +22,8 @@ export default function RequestPage() {
     }
     setIsLoading(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/`, {
+      const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${auth.token}`,
-        },
         body: JSON.stringify({
           sender: auth.wallet._id,
           receiver: email,

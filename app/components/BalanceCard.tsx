@@ -23,9 +23,7 @@ export function BalanceCard({ balance = 0, currency = "€" }: BalanceCardProps)
       const walletId = auth.wallet?._id
       if (!auth.token) return
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/me/balance`, {
-          headers: { Authorization: `Bearer ${auth.token}` },
-        })
+        const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/wallet/me/balance`)
         if (res.ok) {
           const text = await res.json()
           // API returns formatted funds string

@@ -71,9 +71,8 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
 
     if (isMounted.current) setLoading(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/payments/create-payment-intent`, {
+      const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/payments/create-payment-intent`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token ?? ""}` },
         body: JSON.stringify({ amount: numeric }),
       })
       if (!res.ok) throw new Error((await res.text()) || `status ${res.status}`)
@@ -108,9 +107,8 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
 
       if (isMounted.current) setError(null)
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/payments/confirm-payment-intent`, {
+        await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/payments/confirm-payment-intent`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token ?? ""}` },
           body: JSON.stringify({ paymentIntentId: result.paymentIntent?.id ?? result.paymentIntent }),
         })
       } catch (_e) {
