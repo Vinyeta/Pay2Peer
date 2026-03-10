@@ -23,14 +23,17 @@ export default function SignUpPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    privacyPolicyAccepted: false,
+    termsOfServiceAccepted: false,
   })
   const [isLoading, setIsLoading] = useState(false)
   const [feedback, setFeedback] = useState<{ message: string; type?: "error" | "success" } | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     })
   }
 
@@ -39,6 +42,10 @@ export default function SignUpPage() {
     setFeedback(null)
     if (formData.password !== formData.confirmPassword) {
       setFeedback({ message: "Passwords do not match", type: "error" })
+      return
+    }
+    if (!formData.privacyPolicyAccepted || !formData.termsOfServiceAccepted) {
+      setFeedback({ message: "You must accept Privacy Policy and Terms of Service", type: "error" })
       return
     }
     setIsLoading(true)
@@ -152,9 +159,47 @@ export default function SignUpPage() {
                 />
               </div>
 
+              <div className="pt-2 space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="privacyPolicyAccepted"
+                    checked={formData.privacyPolicyAccepted}
+                    onChange={handleChange}
+                    className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-600">
+                    I agree to the{" "}
+                    <Link href="/privacy" className="text-blue-600 hover:text-blue-700 font-medium">
+                      Privacy Policy
+                    </Link>
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="termsOfServiceAccepted"
+                    checked={formData.termsOfServiceAccepted}
+                    onChange={handleChange}
+                    className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-600">
+                    I agree to the{" "}
+                    <Link href="/terms" className="text-blue-600 hover:text-blue-700 font-medium">
+                      Terms of Service
+                    </Link>
+                  </span>
+                </label>
+              </div>
+
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={
+                  isLoading ||
+                  !formData.privacyPolicyAccepted ||
+                  !formData.termsOfServiceAccepted
+                }
                 opaque
                 className="w-full py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
