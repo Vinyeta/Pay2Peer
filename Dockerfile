@@ -1,20 +1,40 @@
-# Use the latest LTS version of Node.js
-FROM node:18-alpine
- 
-# Set the working directory inside the container
+# ── Stage 1: install dependencies ──────────────────────────────────
+FROM node:22-alpine AS deps
+
 WORKDIR /app
- 
-# Copy package.json and package-lock.json
-COPY package*.json ./
- 
-# Install dependencies
-RUN npm install
- 
-# Copy the rest of your application files
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+# ── Stage 2: build ────────────────────────────────────────────────
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
- 
-# Expose the port your app runs on
+
+# Next.js telemetry opt-out
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN npm run build
+
+# ── Stage 3: production image ─────────────────────────────────────
+FROM node:22-alpine AS runner
+
+# Security: run as non-root
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copy only what's needed to run
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+USER appuser
+
 EXPOSE 3000
- 
-# Define the command to run your app
-CMD ["npm", "start"]
+
+CMD ["node", "server.js"]

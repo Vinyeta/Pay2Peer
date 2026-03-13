@@ -5,3 +5,12 @@ Dockerfile
 .git
 .gitignore
 .env
+# React Router leftover files (not used by Next.js)
+app/root.tsx
+app/routes.ts
+app/app.css
+react-router.config.ts
+vite.config.ts
+# NextAuth skeleton (not used — app uses custom JWT auth)
+app/auth.ts
+app/api/auth
