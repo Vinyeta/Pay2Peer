@@ -1,0 +1,96 @@
+# ──────────────────────────────────────────────────────────────────────
+# CI Pipeline — Pay2Peer Frontend (Next.js)
+# Runs on every push / PR to vercelized.
+# Steps: lint → type-check → build → Docker build
+# ──────────────────────────────────────────────────────────────────────
+name: CI
+
+on:
+  push:
+    branches: [vercelized]
+  pull_request:
+    branches: [vercelized]
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Lint ───────────────────────────────────────────────────────────
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+  # ── Type check ─────────────────────────────────────────────────────
+  typecheck:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx tsc --noEmit
+
+  # ── Build ──────────────────────────────────────────────────────────
+  build:
+    name: Next.js build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build Next.js
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:5000
+
+  # ── Audit ──────────────────────────────────────────────────────────
+  audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check for critical/high vulnerabilities
+        run: npm audit --audit-level=high
+
+  # ── Docker build check ─────────────────────────────────────────────
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t pay2peer-frontend:ci .

@@ -1,0 +1,44 @@
+# ──────────────────────────────────────────────────────────────────────
+# Security Pipeline — Pay2Peer Frontend
+# Secret scanning (GitLeaks) + dependency review on PRs.
+# ──────────────────────────────────────────────────────────────────────
+name: Security
+
+on:
+  push:
+    branches: [vercelized]
+  pull_request:
+    branches: [vercelized]
+
+permissions:
+  contents: read
+
+jobs:
+  # ── GitLeaks — secret scanning ────────────────────────────────────
+  gitleaks:
+    name: GitLeaks (secret scanning)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Dependency review (PRs only) ──────────────────────────────────
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-3.0, AGPL-3.0
