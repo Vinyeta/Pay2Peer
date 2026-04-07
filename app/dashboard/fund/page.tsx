@@ -14,7 +14,8 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PK ?? "")
 
 export default function FundPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  
+  const [tab, setTab] = useState<"add" | "withdraw">("add")
+
   const [amount, setAmount] = useState<string>("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -33,19 +34,40 @@ export default function FundPage() {
           <div className="w-full max-w-4xl mx-auto">
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Add funds</h1>
-                <p className="text-gray-600">Top up your wallet using Stripe.</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Funds</h1>
+                <p className="text-gray-600">Add or withdraw money from your wallet.</p>
               </div>
               <div className="w-64">
                 <UserProfile />
               </div>
             </div>
 
-            <div className="relative flex items-start justify-center min-h-[calc(100vh-120px)] p-8">
-              <div className="max-w-md mx-auto">
-                <Elements stripe={stripePromise}>
-                  <CheckoutForm amount={amount} setAmount={setAmount} loading={loading} setLoading={setLoading} error={error} setError={setError} />
-                </Elements>
+            {/* Tabs */}
+            <div className="flex gap-6 mb-8 border-b border-gray-200 pb-4">
+              {(["add", "withdraw"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => { setTab(t); setAmount(""); setError(null) }}
+                  className={`capitalize font-medium transition-colors ${
+                    tab === t
+                      ? "text-blue-600 border-b-2 border-blue-600 -mb-4 pb-4"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {t === "add" ? "Add Funds" : "Withdraw"}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative flex items-start justify-center min-h-[calc(100vh-220px)] p-8">
+              <div className="max-w-md mx-auto w-full">
+                {tab === "add" ? (
+                  <Elements stripe={stripePromise}>
+                    <CheckoutForm amount={amount} setAmount={setAmount} loading={loading} setLoading={setLoading} error={error} setError={setError} />
+                  </Elements>
+                ) : (
+                  <WithdrawForm amount={amount} setAmount={setAmount} loading={loading} setLoading={setLoading} error={error} setError={setError} />
+                )}
               </div>
             </div>
           </div>
@@ -149,6 +171,62 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
 
       <Button type="submit" disabled={loading || !stripe} opaque className="py-3 px-6">
         {loading ? "Processing..." : "Pay"}
+      </Button>
+    </form>
+  )
+}
+
+function WithdrawForm({ amount, setAmount, loading, setLoading, error, setError }: any) {
+  const auth = useAuth()
+  const [success, setSuccess] = React.useState<string | null>(null)
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
+    const numeric = parseFloat(amount)
+    if (isNaN(numeric) || numeric <= 0) return setError("Enter a valid amount")
+
+    setLoading(true)
+    try {
+      const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/payments/withdraw`, {
+        method: "POST",
+        body: JSON.stringify({ amount: numeric }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error ?? `Error ${res.status}`)
+
+      setSuccess(`Withdrawal of ${data.amount} processed. New balance: ${data.newBalance}`)
+      setAmount("")
+      try { auth.refreshUserAndWallet() } catch { /* ignore */ }
+    } catch (err: any) {
+      setError(err?.message ?? "Withdrawal failed")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <p className="text-sm text-gray-500">
+        Simulated withdrawal — funds deducted immediately. Arrival: 1–3 business days.
+      </p>
+      <label className="block text-sm font-medium text-gray-700">Amount (EUR)</label>
+      <input
+        type="number"
+        step="0.01"
+        min="0"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+        placeholder="10.00"
+      />
+
+      {error && <FormFeedback message={error} type="error" />}
+      {success && <FormFeedback message={success} type="success" />}
+
+      <Button type="submit" disabled={loading} opaque className="py-3 px-6">
+        {loading ? "Processing..." : "Withdraw"}
       </Button>
     </form>
   )
