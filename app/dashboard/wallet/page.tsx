@@ -25,6 +25,8 @@ export default function WalletPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
     async function loadTxs() {
@@ -32,7 +34,7 @@ export default function WalletPage() {
       setLoading(true)
       try {
         const base = process.env.NEXT_PUBLIC_API_ROOT ?? ''
-        const url = `${base}api/transactions/me/all`
+        const url = `${base}api/transactions/me/all/paginated?page=${page}&type=${filterType}`
         const res = await auth.authFetch(url)
         if (!res.ok) {
           const txt = await res.text().catch(() => '')
@@ -40,13 +42,14 @@ export default function WalletPage() {
           setTransactions([])
           return
         }
-        const data = await res.json()
-        // map backend transactions to UI Transaction
+        const payload = await res.json()
+        const data: any[] = Array.isArray(payload) ? payload : (payload.data ?? [])
         if (!Array.isArray(data)) {
-          console.error('Transactions payload is not an array', data)
+          console.error('Transactions payload is not an array', payload)
           setTransactions([])
           return
         }
+        setTotalPages(payload.pages ?? 1)
 
         const mapped: Transaction[] = data.map((t: any, idx: number) => {
           const walletId = auth.wallet?._id
@@ -89,10 +92,7 @@ export default function WalletPage() {
     loadTxs()
     // mark mounted for client-only formatting
     setMounted(true)
-    // no incoming requests loaded here; requests moved to dashboard overview
-  }, [auth.wallet, auth.token])
-
-  const filteredTransactions = transactions.filter((t) => filterType === "all" || t.type === filterType)
+  }, [auth.wallet, auth.token, page, filterType])
 
   // Formatting helpers
   const formatDate = (d: string) => {
@@ -106,7 +106,7 @@ export default function WalletPage() {
     }
   }
 
-  const formatCurrency = (amount: number, currency = 'USD') => {
+  const formatCurrency = (amount: number, currency = 'EUR') => {
     if (!mounted) return `${amount.toFixed(2)} ${currency}`
     try {
       const abs = Math.abs(amount)
@@ -121,8 +121,8 @@ export default function WalletPage() {
   // Precompute transactions content to simplify JSX and avoid parsing issues
   const transactionsContent = (() => {
     if (loading) return <div className="p-4 text-center text-sm text-gray-500">Loading transactions...</div>
-    if (filteredTransactions.length === 0) return <div className="p-4 text-center text-sm text-gray-500">No transactions yet.</div>
-    return filteredTransactions.map((transaction, index) => (
+    if (transactions.length === 0) return <div className="p-4 text-center text-sm text-gray-500">No transactions yet.</div>
+    return transactions.map((transaction, index) => (
       <motion.div
         key={transaction.id}
         initial={{ opacity: 0, y: 10 }}
@@ -219,7 +219,7 @@ export default function WalletPage() {
                 {["all", "income", "outcome"].map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => setFilterType(tab as "all" | "income" | "outcome")}
+                    onClick={() => { setFilterType(tab as "all" | "income" | "outcome"); setPage(1) }}
                     className={`capitalize font-medium transition-colors ${
                       filterType === tab
                         ? "text-blue-600 border-b-2 border-blue-600 -mb-4 pb-4"
@@ -239,12 +239,28 @@ export default function WalletPage() {
                 {transactionsContent}
               </div>
 
-              {/* Show More Link */}
-              <div className="mt-6 text-center">
-                <button className="text-blue-500 hover:text-blue-600 font-medium text-sm transition-colors">
-                  Show more transactions
-                </button>
-              </div>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                    disabled={page === 1 || loading}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ← Previous
+                  </button>
+                  <span className="text-sm text-gray-500">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                    disabled={page === totalPages || loading}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Bottom right decorative dots */}
