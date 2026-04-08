@@ -15,6 +15,12 @@ COPY . .
 # Next.js telemetry opt-out
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Build-time env vars (NEXT_PUBLIC_* are baked into the JS bundle)
+ARG NEXT_PUBLIC_API_ROOT="/"
+ARG NEXT_PUBLIC_STRIPE_PK=""
+ENV NEXT_PUBLIC_API_ROOT=$NEXT_PUBLIC_API_ROOT
+ENV NEXT_PUBLIC_STRIPE_PK=$NEXT_PUBLIC_STRIPE_PK
+
 RUN npm run build
 
 # ── Stage 3: production image ─────────────────────────────────────

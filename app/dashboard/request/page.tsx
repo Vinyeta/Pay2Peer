@@ -1,9 +1,9 @@
  'use client';
 
 import { useState } from 'react';
-import { Menu } from 'lucide-react'
+import { Menu, CheckCircle, XCircle, Inbox } from 'lucide-react'
 import { UserProfile } from '../../components/UserProfile'
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext'
 
@@ -12,39 +12,54 @@ export default function RequestPage() {
   const [email, setEmail] = useState('');
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [statusOk, setStatusOk] = useState(true);
   const auth = useAuth()
+
+  const showStatus = (msg: string, ok: boolean) => {
+    setStatusMsg(msg)
+    setStatusOk(ok)
+    if (ok) setTimeout(() => setStatusMsg(null), 4000)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth.token || !auth.wallet?._id) {
-      alert('Not authenticated')
+      showStatus('Not authenticated', false)
+      return
+    }
+    const parsed = parseFloat(amount)
+    if (isNaN(parsed) || parsed <= 0) {
+      showStatus('Enter a valid amount', false)
       return
     }
     setIsLoading(true)
+    setStatusMsg(null)
     try {
       const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/`, {
         method: 'POST',
         body: JSON.stringify({
           sender: auth.wallet._id,
           receiver: email,
-          amount: parseFloat(amount),
+          amount: parsed,
         }),
       })
       if (res.ok) {
         setEmail('')
         setAmount('')
+        showStatus(`Request for €${parsed.toFixed(2)} sent`, true)
       } else {
-        const err = await res.text()
-        alert('Error: ' + err)
+        const err = await res.text().catch(() => 'Server error')
+        let msg = err
+        try { msg = JSON.parse(err)?.error ?? err } catch { /* noop */ }
+        showStatus(msg, false)
       }
     } catch {
-      alert('Network error')
+      showStatus('Network error', false)
     } finally {
       setIsLoading(false)
     }
   }
-
- 
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -95,36 +110,54 @@ export default function RequestPage() {
               Request money from another user
             </h2>
 
+            {/* Inline status message */}
+            <AnimatePresence>
+              {statusMsg && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className={`flex items-center gap-2 mb-4 px-4 py-3 rounded-lg text-sm font-medium ${
+                    statusOk ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                  }`}
+                >
+                  {statusOk ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                  {statusMsg}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <input
                   type="email"
-                  placeholder="Email"
+                  placeholder="Recipient email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-gray-50"
                 />
               </div>
 
               <div>
                 <input
                   type="number"
-                  placeholder="Amount"
+                  placeholder="Amount (€)"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   required
                   step="0.01"
-                  min="0"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  min="0.01"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-gray-50"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-8 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-75 disabled:cursor-not-allowed"
+                className="w-full mt-8 py-3 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
+                <Inbox size={16} />
                 {isLoading ? 'Processing...' : 'Request funds'}
               </button>
             </form>

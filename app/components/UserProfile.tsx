@@ -47,7 +47,14 @@ export function UserProfile({ name }: UserProfileProps) {
         </div>
         <div>
           <p className="text-sm text-gray-600">Current User</p>
-          <h3 className="font-semibold text-gray-900">{auth.user?.email ?? ""}</h3>
+          <h3 className="font-semibold text-gray-900">
+            {auth.user?.name
+              ? `${auth.user.name}${auth.user.surname ? " " + auth.user.surname : ""}`
+              : (auth.user?.email ?? "")}
+          </h3>
+          {auth.user?.name && (
+            <p className="text-xs text-gray-400">{auth.user.email}</p>
+          )}
         </div>
       </div>
       <motion.button

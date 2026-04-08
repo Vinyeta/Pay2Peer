@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import Link from "next/link"
-import { Menu, X } from 'lucide-react'
+import { Menu, X, LayoutDashboard, Wallet, SendHorizonal, Inbox, CreditCard, Settings, LogOut } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
@@ -12,16 +12,16 @@ interface SidebarProps {
   onToggle: () => void
 }
 
-export function Sidebar({ open, onToggle }: SidebarProps) {
-  const menuItems = [
-    { label: "Dashboard", icon: "📊", href: "/dashboard" },
-    { label: "Wallet", icon: "👛", href: "/dashboard/wallet" },
-    { label: "Send", icon: "📤", href: "/dashboard/send" },
-    { label: "Request", icon: "📬", href: "/dashboard/request" },
-    { label: "Fund", icon: "💳", href: "/dashboard/fund" },
-    { label: "Account Settings", icon: "⚙️", href: "/dashboard/account-settings" },
-  ]
+const menuItems = [
+  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { label: "Wallet", icon: Wallet, href: "/dashboard/wallet" },
+  { label: "Send", icon: SendHorizonal, href: "/dashboard/send" },
+  { label: "Request", icon: Inbox, href: "/dashboard/request" },
+  { label: "Fund", icon: CreditCard, href: "/dashboard/fund" },
+  { label: "Account Settings", icon: Settings, href: "/dashboard/account-settings" },
+]
 
+export function Sidebar({ open, onToggle }: SidebarProps) {
   const mobileTransform = open ? 'translate-x-0' : '-translate-x-full'
 
   const pathname = usePathname()
@@ -69,6 +69,7 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
       </div>
       <nav className="mt-8 space-y-2 px-2">
         {menuItems.map((item) => {
+          const Icon = item.icon
           // only highlight Dashboard for the exact `/dashboard` route
           const active = item.href === '/dashboard'
             ? pathname === '/dashboard'
@@ -85,7 +86,7 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
                 active ? 'bg-teal-100 text-teal-700' : 'text-gray-700 hover:bg-teal-50'
               }`}
             >
-              <span className="text-xl">{item.icon}</span>
+              <Icon size={20} className="shrink-0" />
               <motion.span
                 animate={{ opacity: open ? 1 : 0 }}
                 transition={{ duration: 0.3 }}
@@ -107,8 +108,9 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
             onToggle()
             router.push('/signin')
           }}
-          className="w-full px-4 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors cursor-pointer"
+          className="w-full px-4 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors cursor-pointer flex items-center justify-center gap-2"
         >
+          <LogOut size={16} />
           Logout
         </motion.button>
       </div>
