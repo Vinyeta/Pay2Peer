@@ -2,12 +2,12 @@
 
 import { Sidebar } from "../../components/Sidebar"
 import { BalanceCard } from "../../components/BalanceCard"
-import { UserProfile } from "../../components/UserProfile"
 import { useState, useEffect } from "react"
 import { Menu } from 'lucide-react'
 import { motion } from "framer-motion"
 import { ArrowUpRight, ArrowDownLeft } from 'lucide-react'
 import { useAuth } from "../../context/AuthContext"
+import Link from "next/link"
 
 interface Transaction {
   id: number
@@ -177,14 +177,9 @@ export default function WalletPage() {
         )}
         <div className="p-8 pt-16 md:pt-8">
           <div className="w-full max-w-4xl mx-auto">
-            <div className="flex justify-between items-start mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Wallet</h1>
-                <p className="text-gray-600">Overview of your balance and recent activity</p>
-              </div>
-              <div className="w-64">
-                <UserProfile />
-              </div>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Wallet</h1>
+              <p className="text-gray-600">Overview of your balance and recent activity</p>
             </div>
           </div>
 
@@ -206,9 +201,11 @@ export default function WalletPage() {
                 <div className="flex-shrink-0">
                   <BalanceCard balance={269.89} currency="$" />
                 </div>
-                <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors md:mt-12 mt-0">
-                  Add Funds
-                </button>
+                <Link href="/dashboard/fund">
+                  <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors md:mt-12 mt-0">
+                    Add Funds
+                  </button>
+                </Link>
               </div>
             </div>
 

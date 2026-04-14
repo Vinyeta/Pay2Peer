@@ -106,15 +106,18 @@ function CheckoutForm({ amount, setAmount, loading, setLoading, error, setError 
       }
 
       if (isMounted.current) setError(null)
-      try {
-        await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/payments/confirm-payment-intent`, {
-          method: "POST",
-          body: JSON.stringify({ paymentIntentId: result.paymentIntent?.id ?? result.paymentIntent }),
-        })
-      } catch (_e) {
-        console.warn("Failed to notify backend of payment", _e)
+      const confirmRes = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/payments/confirm-payment-intent`, {
+        method: "POST",
+        body: JSON.stringify({ paymentIntentId: result.paymentIntent?.id ?? result.paymentIntent }),
+      })
+      if (!confirmRes.ok) {
+        const errBody = await confirmRes.text().catch(() => "")
+        console.error("confirm-payment-intent failed", confirmRes.status, errBody)
+        if (isMounted.current) setError("Payment went through but wallet update failed. Please contact support.")
+        return
       }
       try { auth.refreshUserAndWallet() } catch {}
+      if (isMounted.current) setError(null)
       alert("Payment successful — funds added to your wallet")
     } catch (err: any) {
       console.error(err)

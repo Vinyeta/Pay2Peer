@@ -3,7 +3,6 @@
 import React, { useState } from "react"
 import { Menu } from 'lucide-react'
 import { Sidebar } from "../../components/Sidebar"
-import { UserProfile } from "../../components/UserProfile"
 import { Button } from "../../components/Button"
 import FormFeedback from "../../components/FormFeedback"
 import { useAuth } from "../../context/AuthContext"
@@ -32,14 +31,9 @@ export default function FundPage() {
         )}
         <div className="p-8 pt-16 md:pt-8">
           <div className="w-full max-w-4xl mx-auto">
-            <div className="flex justify-between items-start mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Funds</h1>
-                <p className="text-gray-600">Add or withdraw money from your wallet.</p>
-              </div>
-              <div className="w-64">
-                <UserProfile />
-              </div>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Funds</h1>
+              <p className="text-gray-600">Add or withdraw money from your wallet.</p>
             </div>
 
             {/* Tabs */}

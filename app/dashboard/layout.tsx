@@ -3,6 +3,7 @@
 import React, { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "../context/AuthContext"
+import { UserProfile } from "../components/UserProfile"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const auth = useAuth()
@@ -16,5 +17,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!auth.token) return null
 
-  return <>{children}</>
+  return (
+    <>
+      <div className="fixed top-6 right-6 z-50">
+        <UserProfile />
+      </div>
+      {children}
+    </>
+  )
 }

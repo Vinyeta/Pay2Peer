@@ -4,7 +4,6 @@
 import { Sidebar } from "../components/Sidebar"
 import { BalanceCard } from "../components/BalanceCard"
 import { TransactionCard } from "../components/TransactionCard"
-import { UserProfile } from "../components/UserProfile"
 import OverviewChart from "../components/OverviewChart"
 import TransactionsHistogram from "../components/TransactionsHistogram"
 import { useState, useEffect } from "react"
@@ -102,14 +101,9 @@ export default function DashboardPage() {
         )}
         <div className="p-8 pt-16 md:pt-8">
           {/* Header */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Overview</h1>
-              <p className="text-gray-600">Get a summary of your transactions and requests here</p>
-            </div>
-            <div className="w-64">
-              <UserProfile />
-            </div>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Overview</h1>
+            <p className="text-gray-600">Get a summary of your transactions and requests here</p>
           </div>
 
           {/* Quick Actions */}
