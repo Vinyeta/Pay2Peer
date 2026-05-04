@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Menu } from 'lucide-react'
 import { Sidebar } from "../../components/Sidebar"
 import { Button } from "../../components/Button"
@@ -12,7 +12,8 @@ import { Elements, CardElement, useStripe, useElements } from "@stripe/react-str
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PK ?? "")
 
 export default function FundPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  useEffect(() => { setSidebarOpen(window.innerWidth >= 768) }, [])
   const [tab, setTab] = useState<"add" | "withdraw">("add")
 
   const [amount, setAmount] = useState<string>("")

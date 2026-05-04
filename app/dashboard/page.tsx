@@ -13,7 +13,11 @@ import Link from "next/link"
 import { useAuth } from "../context/AuthContext"
 
 export default function DashboardPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    setSidebarOpen(window.innerWidth >= 768)
+  }, [])
 
   const auth = useAuth()
   const [requests, setRequests] = useState<any[]>([])

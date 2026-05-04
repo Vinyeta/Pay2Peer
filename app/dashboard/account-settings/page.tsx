@@ -1,6 +1,6 @@
  'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Menu } from 'lucide-react'
 import { motion } from 'framer-motion';
@@ -11,7 +11,8 @@ import Image from 'next/image'
 
 export default function AccountSettingsPage() {
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => { setSidebarOpen(window.innerWidth >= 768) }, [])
   const auth = useAuth()
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

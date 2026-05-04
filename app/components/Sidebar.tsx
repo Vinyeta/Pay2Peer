@@ -46,7 +46,7 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
       <motion.aside
         animate={{ width: open ? 256 : 80 }}
         transition={{ duration: 0.3 }}
-        className={`${mobileTransform} fixed top-0 left-0 h-screen z-40 transform transition-transform md:static md:translate-x-0 sidebar`}
+        className={`${mobileTransform} fixed top-0 left-0 h-screen z-40 transform transition-transform md:static md:translate-x-0 sidebar ${!open ? 'pointer-events-none md:pointer-events-auto' : ''}`}
       >
       <div className="p-4 flex items-center justify-between">
         <motion.div

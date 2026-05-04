@@ -10,7 +10,7 @@ import { useAuth } from "../../context/AuthContext"
 import Link from "next/link"
 
 interface Transaction {
-  id: number
+  id: string
   date: string
   name: string
   type: "income" | "outcome"
@@ -19,7 +19,11 @@ interface Transaction {
 }
 
 export default function WalletPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    setSidebarOpen(window.innerWidth >= 768)
+  }, [])
   const [filterType, setFilterType] = useState<"all" | "income" | "outcome">("all")
   const auth = useAuth()
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -27,6 +31,13 @@ export default function WalletPage() {
   const [mounted, setMounted] = useState(false)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [connectStatus, setConnectStatus] = useState<{ connected: boolean; onboardingComplete: boolean } | null>(null)
+  const [connectLoading, setConnectLoading] = useState(false)
+  const [connectMessage, setConnectMessage] = useState("")
+  const [withdrawAmount, setWithdrawAmount] = useState("")
+  const [withdrawLoading, setWithdrawLoading] = useState(false)
+  const [withdrawError, setWithdrawError] = useState("")
+  const [withdrawSuccess, setWithdrawSuccess] = useState("")
 
   useEffect(() => {
     async function loadTxs() {
@@ -51,14 +62,17 @@ export default function WalletPage() {
         }
         setTotalPages(payload.pages ?? 1)
 
-        const mapped: Transaction[] = data.map((t: any, idx: number) => {
+        const mapped: Transaction[] = data.map((t: any) => {
           const walletId = auth.wallet?._id
-          const isSender = t.sender?._id === walletId || t.sender === walletId
+          const isWithdrawal = t.stripeSender === "WITHDRAWAL"
+          const isSender = isWithdrawal || t.sender?._id === walletId || t.sender === walletId
           const counterparty = isSender ? (t.receiver?.author ?? t.receiver) : (t.sender?.author ?? t.sender)
           let name = counterparty?.name ?? counterparty?.firstName ?? counterparty?.email ?? "Unknown"
           // If transaction comes from a payment gateway (Stripe), make it explicit
           const looksLikeStripe = Boolean(t?.stripeSender)
-          if ((name === 'Unknown' || !name) && looksLikeStripe) {
+          if (isWithdrawal) {
+            name = 'Withdrawal'
+          } else if ((name === 'Unknown' || !name) && looksLikeStripe) {
             if (t.description) name = t.description
             else if (t.paymentIntent) name = `Top-up (Stripe)`
             else name = 'Top-up (Stripe)'
@@ -73,7 +87,7 @@ export default function WalletPage() {
           }
           const amount = isSender ? -Math.abs(num) : Math.abs(num)
           return {
-            id: idx + 1,
+            id: String(t._id ?? Math.random()),
             date: t.date,
             name,
             type: isSender ? "outcome" : "income",
@@ -92,7 +106,78 @@ export default function WalletPage() {
     loadTxs()
     // mark mounted for client-only formatting
     setMounted(true)
-  }, [auth.wallet, auth.token, page, filterType])
+  }, [auth.wallet?._id, auth.token, page, filterType])
+
+  useEffect(() => {
+    async function loadConnectStatus() {
+      if (!auth.token) return
+      try {
+        const base = process.env.NEXT_PUBLIC_API_ROOT ?? ''
+        const res = await auth.authFetch(`${base}api/stripe/connect/status`)
+        if (res.ok) setConnectStatus(await res.json())
+      } catch { /* silent */ }
+    }
+    loadConnectStatus()
+    // Handle returns from Stripe Connect onboarding
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.has('connect_return')) {
+        setConnectMessage('Account setup complete! Withdraw funds once Stripe finishes verification (may take a few minutes).')
+        loadConnectStatus()
+      }
+    }
+  }, [auth.token])
+
+  async function handleOnboard() {
+    if (!auth.token) return
+    setConnectLoading(true)
+    try {
+      const base = process.env.NEXT_PUBLIC_API_ROOT ?? ''
+      const res = await auth.authFetch(`${base}api/stripe/connect/onboard`, { method: 'POST' })
+      const data = await res.json()
+      if (res.ok && data.url) {
+        window.location.href = data.url
+      } else {
+        setWithdrawError(data.error ?? 'Failed to start onboarding')
+      }
+    } catch {
+      setWithdrawError('Error connecting to server')
+    } finally {
+      setConnectLoading(false)
+    }
+  }
+
+  async function handleWithdraw() {
+    setWithdrawError('')
+    setWithdrawSuccess('')
+    const amount = parseFloat(withdrawAmount)
+    if (isNaN(amount) || amount <= 0) {
+      setWithdrawError('Enter a valid positive amount')
+      return
+    }
+    setWithdrawLoading(true)
+    try {
+      const base = process.env.NEXT_PUBLIC_API_ROOT ?? ''
+      const res = await auth.authFetch(`${base}api/stripe/withdraw`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setWithdrawSuccess(`Withdrawal of ${data.amount} processed. New balance: ${data.newBalance}`)
+        setWithdrawAmount('')
+        await auth.refreshUserAndWallet()
+        setPage(1)
+      } else {
+        setWithdrawError(data.error ?? 'Withdrawal failed')
+      }
+    } catch {
+      setWithdrawError('Error processing withdrawal')
+    } finally {
+      setWithdrawLoading(false)
+    }
+  }
 
   // Formatting helpers
   const formatDate = (d: string) => {
@@ -175,7 +260,7 @@ export default function WalletPage() {
             <Menu size={20} />
           </button>
         )}
-        <div className="p-8 pt-16 md:pt-8">
+        <div className="p-8 pt-16 md:pt-8 pb-28 md:pb-8">
           <div className="w-full max-w-4xl mx-auto">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Wallet</h1>
@@ -189,7 +274,7 @@ export default function WalletPage() {
             {/* Balance Card with Add Funds button on top */}
             <div className="relative mb-8">
               {/* Top decorative dots */}
-              <div className="absolute -top-20 -left-20 w-40 h-40 opacity-20">
+              <div className="absolute -top-20 -left-20 w-40 h-40 opacity-20 pointer-events-none">
                 <div className="grid grid-cols-8 gap-2">
                   {Array(64).fill(0).map((_, i) => (
                     <div key={i} className="w-2 h-2 bg-cyan-400 rounded-full"></div>
@@ -206,6 +291,37 @@ export default function WalletPage() {
                     Add Funds
                   </button>
                 </Link>
+              </div>
+            </div>
+
+            {/* Withdraw Funds Section */}
+            <div className="mb-8 p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Withdraw Funds</h2>
+              {withdrawError && (
+                <div className="mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{withdrawError}</div>
+              )}
+              {withdrawSuccess && (
+                <div className="mb-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg p-3">{withdrawSuccess}</div>
+              )}
+              <div className="flex flex-col gap-3 w-full max-w-sm">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="Amount (€)"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    className="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  />
+                  <button
+                    onClick={handleWithdraw}
+                    disabled={withdrawLoading || !withdrawAmount}
+                    className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-white px-5 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+                  >
+                    {withdrawLoading ? 'Processing...' : 'Withdraw'}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -261,7 +377,7 @@ export default function WalletPage() {
             </div>
 
             {/* Bottom right decorative dots */}
-            <div className="absolute -bottom-16 -right-8 w-48 h-48 opacity-10">
+            <div className="absolute -bottom-16 -right-8 w-48 h-48 opacity-10 pointer-events-none">
               <div className="grid grid-cols-8 gap-2">
                 {Array(64).fill(0).map((_, i) => (
                   <div key={i} className="w-3 h-3 bg-blue-600 rounded-full"></div>

@@ -1,0 +1,509 @@
+
+
+
+\end{titlepage}
+
+% ── RESUMEN ───────────────────────────────────────────────────────
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+
+Pay2Peer es una aplicación web de tipo \emph{fintech} que permite a sus usuarios registrarse, añadir fondos mediante tarjeta bancaria, transferir dinero entre pares (\emph{peer-to-peer}), solicitar pagos y consultar su historial de movimientos. Su funcionamiento es análogo al de plataformas comerciales como PayPal o Bizum, pero ha sido diseñada íntegramente como proyecto académico para el ciclo de ASIR con especialización en Ciberseguridad.
+
+El desarrollo se ha dividido en dos fases. La primera entregó un producto mínimo viable con autenticación, wallets, transferencias e integración con la pasarela de pagos Stripe. La segunda fase ---objeto principal de esta memoria--- abordó la securización completa del sistema según el marco STRIDE, el cumplimiento de la LOPD y el GDPR, la implementación de una cadena de bloques privada con algoritmo de consenso \emph{Proof of Authority} para auditoría criptográfica, autenticación de dos factores TOTP, una suite de 149 pruebas automáticas \emph{end-to-end} y el despliegue en producción sobre infraestructura propia con Docker, Nginx y Cloudflare.
+
+El resultado es un sistema funcional, seguro y desplegado en un entorno real, que demuestra la aplicación práctica de los conocimientos adquiridos durante el ciclo formativo en las áreas de desarrollo web, administración de sistemas, redes y ciberseguridad.
+
+% ── ÍNDICE ────────────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Introducción}
+% ══════════════════════════════════════════════════════════════════
+
+\section{Contexto y motivación}
+
+La digitalización de los servicios financieros es una de las tendencias más relevantes de la última década. Plataformas como PayPal, Revolut o Bizum han demostrado que los usuarios demandan soluciones de pago instantáneo, accesibles desde el navegador o el teléfono móvil, y con un nivel de seguridad equiparable al de la banca tradicional~\cite{owasp}. Sin embargo, detrás de la aparente sencillez de estas aplicaciones se esconde una complejidad técnica considerable: autenticación robusta, gestión de transacciones atómicas, cumplimiento normativo, protección frente a fraude y una infraestructura capaz de operar de forma continua.
+
+Este proyecto nace con el objetivo de construir una plataforma de estas características desde cero, aplicando los conocimientos adquiridos durante el ciclo de ASIR con especialización en Ciberseguridad. No se trata de competir con productos comerciales, sino de demostrar que un estudiante con formación en administración de sistemas y seguridad informática es capaz de diseñar, implementar, securizar y desplegar un sistema financiero funcional.
+
+\section{Origen del proyecto}
+
+Pay2Peer tiene su origen en un proyecto de aprendizaje de React anterior al ciclo formativo. Aquel primer prototipo implementaba una interfaz básica de wallet con transferencias, pero carecía de cualquier medida de seguridad, infraestructura de despliegue o cumplimiento normativo. El ciclo de ASIR proporcionó la oportunidad ---y los conocimientos--- para transformar ese prototipo en un sistema completo.
+
+\section{Estructura de la memoria}
+
+Esta memoria se organiza de la siguiente forma: el Capítulo~\ref{ch:objetivos} define los objetivos del proyecto. El Capítulo~\ref{ch:metodologia} describe la metodología de trabajo. Los Capítulos~\ref{ch:arquitectura} a~\ref{ch:blockchain} detallan el diseño técnico, las funcionalidades, la seguridad, el cumplimiento legal y la cadena de bloques. El Capítulo~\ref{ch:testing} presenta la estrategia de pruebas. El Capítulo~\ref{ch:despliegue} documenta la infraestructura de producción. Finalmente, los Capítulos~\ref{ch:conclusiones} y~\ref{ch:futuro} recogen las conclusiones y las líneas de trabajo futuro.
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Objetivos}\label{ch:objetivos}
+% ══════════════════════════════════════════════════════════════════
+
+\section{Objetivo general}
+
+Construir una aplicación \emph{fintech} segura, conforme a la normativa europea de protección de datos, desplegada en un entorno de producción real y con trazabilidad criptográfica de todas las operaciones financieras.
+
+\section{Objetivos de la Fase 1}
+
+La primera fase se centró en obtener un producto mínimo viable:
+
+\begin{enumerate}[label=F1.\arabic*]
+  \item Registro e inicio de sesión con tokens JWT.
+  \item Creación automática de wallet por usuario.
+  \item Transferencias \emph{peer-to-peer} entre usuarios registrados.
+  \item Integración con Stripe para la adición de fondos mediante tarjeta bancaria.
+  \item Historial de transacciones con detalle de emisor, receptor, importe y fecha.
+  \item Solicitudes de dinero entre usuarios con flujo de aceptación o rechazo.
+  \item Cola de mensajes con RabbitMQ para la gestión de picos de carga.
+\end{enumerate}
+
+Todos los objetivos de esta fase fueron alcanzados y entregados en diciembre de 2025.
+
+\section{Objetivos de la Fase 2}
+
+La segunda fase perseguía llevar el sistema a un estado de producción seguro:
+
+\begin{enumerate}[label=F2.\arabic*]
+  \item Análisis de amenazas mediante el marco STRIDE y remediación de las 15 vulnerabilidades identificadas.
+  \item Cumplimiento de la LOPD y el GDPR: consentimiento informado, derecho al olvido y portabilidad de datos.
+  \item Implementación de una cadena de bloques privada con consenso \emph{Proof of Authority} y firma digital Ed25519.
+  \item Autenticación de dos factores mediante TOTP (RFC~6238), compatible con Google Authenticator.
+  \item \emph{Rate limiting} en cuatro niveles: global, autenticación, recuperación de contraseña y pagos.
+  \item Control de acceso basado en roles (RBAC): usuario, administrador y soporte.
+  \item \emph{Logging} estructurado con Winston para eventos de seguridad, transacciones y errores.
+  \item Suite de pruebas \emph{end-to-end}: 149 tests en 13 suites con Jest y Supertest.
+  \item Despliegue en producción: servidor propio con Docker Compose, Nginx como proxy inverso y Cloudflare como CDN y terminador TLS.
+  \item Integración con Stripe Connect para retiros a cuenta bancaria (implementación preparada para activación con cuenta empresarial).
+  \item Migración de la base de datos a MongoDB Atlas para alta disponibilidad.
+\end{enumerate}
+
+Todos los objetivos han sido alcanzados.
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Metodología}\label{ch:metodologia}
+% ══════════════════════════════════════════════════════════════════
+
+El desarrollo se ha llevado a cabo siguiendo una metodología iterativa e incremental, organizada en \emph{sprints} informales de una a dos semanas de duración. Cada iteración producía una funcionalidad completa ---backend, frontend y tests--- antes de pasar a la siguiente.
+
+\section{Herramientas de desarrollo}
+
+\begin{itemize}
+  \item \textbf{Control de versiones:} Git con repositorio en GitHub.
+  \item \textbf{Editor:} Visual Studio Code con extensiones para ESLint, Prettier y Tailwind CSS.
+  \item \textbf{Entorno local:} Docker Compose para replicar el entorno de producción. MongoDB y RabbitMQ en contenedores.
+  \item \textbf{Testing:} Jest como \emph{runner}, Supertest para pruebas HTTP, MongoMemoryServer para base de datos en memoria.
+  \item \textbf{Despliegue:} transferencia manual de archivos con \texttt{scp} y reconstrucción de contenedores con \texttt{docker compose build}.
+\end{itemize}
+
+\section{Análisis de seguridad}
+
+La securización de la Fase~2 partió de un análisis STRIDE exhaustivo (documento de 709 líneas, incluido en el repositorio como \texttt{docs/threat-model-STRIDE.txt}). El análisis examinó cada componente del sistema ---autenticación, API, base de datos, webhooks, infraestructura--- y clasificó las amenazas en las seis categorías del modelo: \emph{Spoofing}, \emph{Tampering}, \emph{Repudiation}, \emph{Information Disclosure}, \emph{Denial of Service} y \emph{Elevation of Privilege}. Las 15 vulnerabilidades identificadas se priorizaron por criticidad y se remediaron en orden.
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Arquitectura del sistema}\label{ch:arquitectura}
+% ══════════════════════════════════════════════════════════════════
+
+\section{Visión general}
+
+La arquitectura de Pay2Peer sigue el patrón clásico de tres capas ---presentación, lógica de negocio y datos--- desplegadas como microservicios en contenedores Docker. Todo el tráfico externo pasa por Cloudflare~\cite{cloudflare}, que proporciona TLS, protección DDoS y caché de activos estáticos. Nginx~\cite{nginx} actúa como proxy inverso, enrutando las peticiones \texttt{/api/*} al backend y el resto al frontend.
+
+\begin{lstlisting}[language={},title={Flujo de red en producción}]
+Internet -> Cloudflare (CDN + HTTPS + WAF)
+         -> Nginx (reverse proxy, puerto 80)
+              |-> Frontend (Next.js, puerto 3000)
+              |-> Backend API (Express, puerto 5000)
+                     |-> MongoDB Atlas (cloud)
+                     |-> RabbitMQ (puerto 5672)
+\end{lstlisting}
+
+\section{Frontend}
+
+El frontend está construido con \textbf{Next.js~15} (React~19) y TypeScript~\cite{nextjs}. Se eligió Next.js por su capacidad de renderizado híbrido (servidor y cliente), su sistema de rutas basado en el sistema de archivos y la facilidad de despliegue como aplicación \emph{standalone} en un contenedor Docker~\cite{docker}.
+
+\begin{itemize}
+  \item \textbf{Estilos:} Tailwind CSS~\cite{tailwind}, que elimina los conflictos de cascada habituales en aplicaciones SPA y reduce el tamaño del \emph{bundle} al incluir solo las clases utilizadas.
+  \item \textbf{Gráficos:} Recharts~\cite{recharts} para los histogramas del dashboard.
+  \item \textbf{Pagos:} Stripe Elements~\cite{stripe} mediante \texttt{react-stripe-js}, que gestiona los datos de tarjeta sin que pasen por el servidor del proyecto (cumplimiento PCI DSS~\cite{pcidss}).
+  \item \textbf{Gestión de estado:} React Context (\texttt{AuthContext}) para autenticación, con JWT~\cite{jwt} en memoria y \emph{refresh token} con rotación automática.
+\end{itemize}
+
+\section{Backend}
+
+El backend es una API REST construida con \textbf{Express.js~5}~\cite{expressjs} sobre Node.js~22. Se eligió Express por su madurez, ecosistema de \emph{middleware} y compatibilidad con las librerías de Stripe y JWT.
+
+\begin{itemize}
+  \item \textbf{Base de datos:} MongoDB~\cite{mongodb} con Mongoose como ODM. La elección de MongoDB se justifica por la flexibilidad que ofrece durante un desarrollo iterativo donde el esquema evoluciona frecuentemente. En mayo de 2026 se migró a \textbf{MongoDB Atlas}~\cite{mongoatlas} (cloud) para garantizar disponibilidad y facilitar la arquitectura de \emph{failover}.
+  \item \textbf{Autenticación:} \texttt{express-jwt} para la validación de tokens~\cite{jwt}; bcrypt~\cite{bcrypt} con EksBlowfish para el hash de contraseñas; \emph{refresh tokens} almacenados en base de datos con rotación en cada uso.
+  \item \textbf{Validación:} \texttt{express-validator} en todos los endpoints que reciben datos de usuario.
+  \item \textbf{Pagos:} Stripe API~\cite{stripe} con PaymentIntents para depósitos y verificación de firma en webhooks.
+  \item \textbf{Email:} SendGrid~\cite{sendgrid} para notificaciones transaccionales (registro, transferencias, disputas, recuperación de contraseña).
+  \item \textbf{Cola de mensajes:} RabbitMQ~\cite{rabbitmq} como \emph{buffer} para la gestión de picos de carga.
+  \item \textbf{Logging:} Winston~\cite{winston} con niveles estructurados y persistencia en archivos rotativos.
+  \item \textbf{Blockchain:} cadena privada PoA integrada, con persistencia en MongoDB.
+\end{itemize}
+
+\section{Modelo de datos}
+
+La base de datos se organiza en las colecciones descritas en la Tabla~\ref{tab:colecciones}.
+
+\begin{table}[H]
+\centering
+\caption{Colecciones principales de la base de datos.}\label{tab:colecciones}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Colección} & \textbf{Campos clave} \\
+\midrule
+\texttt{users}         & name, email, password (bcrypt), role, twoFactorSecret, twoFactorEnabled, stripeAccountId \\
+\texttt{wallets}       & author (ref User), funds (formateado en EUR), frozen, paymentMethod \\
+\texttt{transactions}  & sender, receiver, amount, stripeSender, date \\
+\texttt{requestmoney}  & sender, receiver, amount, status (pending/accepted/rejected/cancelled), date \\
+\texttt{blocks}        & index, hash, previousHash, transactions, signature, timestamp \\
+\texttt{userconsents}  & userId, privacyPolicyAccepted, termsOfServiceAccepted, ipAddress, userAgent, date \\
+\texttt{resettokens}   & userId, token (hash SHA-256), expiresAt (TTL 1 hora) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Funcionalidades}\label{ch:funcionalidades}
+% ══════════════════════════════════════════════════════════════════
+
+\section{Autenticación y gestión de sesiones}
+
+\subsection{Registro}
+El registro requiere nombre, apellido, correo electrónico y contraseña. La contraseña se valida contra criterios de complejidad y se almacena hasheada con bcrypt~\cite{bcrypt} (10 rondas de sal). El registro exige la aceptación explícita de la política de privacidad y los términos de servicio, registrándose el consentimiento con la IP y el \emph{user-agent} del cliente (véase el Capítulo~\ref{ch:lopd}).
+
+La respuesta del endpoint de registro es deliberadamente genérica ---\texttt{``Account created or already exists''}--- para impedir la enumeración de usuarios mediante fuerza bruta sobre el campo de correo electrónico.
+
+\subsection{Inicio de sesión y tokens}
+El inicio de sesión devuelve un \emph{access token} JWT con expiración de 15 minutos y un \emph{refresh token} de 7 días almacenado en la base de datos. El \emph{refresh token} implementa rotación: cada uso genera un nuevo par de tokens e invalida el anterior, limitando la ventana de exposición en caso de robo.
+
+El rol del usuario no se almacena en el token JWT sino que se consulta en la base de datos en cada operación que lo requiere, evitando escaladas de privilegio mediante manipulación del payload del token.
+
+\subsection{Autenticación de dos factores (2FA)}
+Se implementó TOTP conforme a la RFC~6238~\cite{rfc6238}, compatible con Google Authenticator, Authy y aplicaciones similares. La implementación utiliza exclusivamente el módulo \texttt{crypto} nativo de Node.js, evitando la dependencia \texttt{otplib} que presentaba incompatibilidades con el sistema de módulos ESM de Jest.
+
+El flujo de 2FA es el siguiente:
+
+\begin{enumerate}
+  \item \textbf{Activación:} el usuario genera un secreto TOTP desde la página de ajustes. El backend devuelve el secreto codificado como URI \texttt{otpauth://} y como código QR en formato \emph{data URL}.
+  \item \textbf{Verificación:} el usuario escanea el QR con su aplicación de autenticación e introduce el código de 6 dígitos. Si es correcto, el 2FA queda activado en su cuenta.
+  \item \textbf{Login:} cuando un usuario con 2FA activo introduce sus credenciales, el sistema devuelve un \texttt{tempToken} (JWT con TTL de 5 minutos y flag \texttt{pending2fa: true}) en lugar del token de acceso definitivo. El cliente debe enviar el código TOTP para completar la autenticación.
+\end{enumerate}
+
+\section{Wallet y operaciones financieras}
+
+\subsection{Wallet}
+Cada usuario dispone de una wallet creada automáticamente en el momento del registro con saldo inicial de 0\,\euro{}. Los importes se gestionan internamente con la librería \texttt{currency.js}~\cite{currencyjs} para evitar errores de aritmética en punto flotante.
+
+\subsection{Adición de fondos}
+El usuario puede añadir fondos mediante tarjeta bancaria a través de Stripe Elements~\cite{stripe}. El flujo es:
+
+\begin{enumerate}
+  \item El frontend crea un \texttt{PaymentIntent} a través del backend.
+  \item Stripe Elements captura los datos de tarjeta sin que pasen por el servidor (cumplimiento PCI DSS).
+  \item El frontend confirma el pago y solicita al backend la verificación mediante \texttt{stripe.paymentIntents.retrieve()}.
+  \item El backend acredita el importe en la wallet del usuario y registra la transacción.
+\end{enumerate}
+
+\subsection{Transferencias \emph{peer-to-peer}}
+El usuario introduce el correo electrónico del destinatario y el importe. El backend verifica que el emisor dispone de fondos suficientes, debita la wallet emisora, acredita la wallet receptora y registra la transacción tanto en MongoDB como en la cadena de bloques.
+
+\subsection{Solicitudes de dinero}
+Un usuario puede solicitar dinero a otro. La solicitud queda en estado \texttt{pending} hasta que el receptor la acepta (ejecutando automáticamente la transferencia) o la rechaza. El emisor de la solicitud puede cancelarla mientras esté pendiente. Se envían notificaciones por correo electrónico en cada cambio de estado.
+
+\subsection{Retiro de fondos}
+La funcionalidad de retiro permite debitar el saldo de la wallet. Para el entorno de demostración se utiliza un retiro simulado que registra la operación sin ejecutar un payout bancario real. Paralelamente, se ha implementado la infraestructura de Stripe Connect~\cite{stripeconnect} (Express Accounts) que permite retiros reales a cuenta bancaria una vez se disponga de una cuenta empresarial verificada en Stripe.
+
+\subsection{Historial de transacciones}
+El historial muestra todas las operaciones del usuario (ingresos y gastos) con paginación de 10 elementos por página y filtrado por tipo. Cada transacción incluye fecha, contraparte, tipo e importe.
+
+\section{Dashboard}
+
+El dashboard ofrece una vista consolidada del estado del usuario: saldo actual, histograma de transacciones de los últimos 7 días (ingresos frente a gastos), transacciones recientes y solicitudes de dinero pendientes de respuesta.
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Seguridad}\label{ch:seguridad}
+% ══════════════════════════════════════════════════════════════════
+
+La seguridad de la Fase~2 se abordó de forma sistemática a partir de un análisis de amenazas basado en el modelo STRIDE de Microsoft~\cite{stride}. El análisis, documentado en un informe de 709 líneas disponible en el repositorio (\texttt{docs/threat-model-STRIDE.txt}), identificó 15 vulnerabilidades clasificadas por categoría y criticidad. Todas han sido remediadas.
+
+\section{Vulnerabilidades identificadas y remediaciones}
+
+La Tabla~\ref{tab:vulnerabilidades} recoge las 15 vulnerabilidades con su categoría STRIDE, descripción y solución aplicada.
+
+\begin{longtable}{p{1cm}p{2.2cm}p{5cm}p{5cm}}
+\caption{Vulnerabilidades identificadas en el análisis STRIDE.}\label{tab:vulnerabilidades} \\
+\toprule
+\textbf{ID} & \textbf{Categoría} & \textbf{Descripción} & \textbf{Solución} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Categoría} & \textbf{Descripción} & \textbf{Solución} \\
+\midrule
+\endhead
+S-01 & Spoofing & JWT sin expiración adecuada & Access token 15\,min + refresh token 7\,d con rotación \\
+S-02 & Spoofing & Refresh token sin rotación & Rotación automática en cada uso; invalidación del anterior \\
+S-03 & Spoofing & Rol del usuario leído del token & El rol se consulta en base de datos en cada operación \\
+S-04 & Tampering & Webhooks de Stripe sin validación & Verificación de firma con \texttt{constructEvent()} \\
+T-03 & Tampering & \emph{Mass assignment} en wallet & \emph{Destructuring} explícito en controladores \\
+T-04 & Tampering & \emph{Mass assignment} en usuario & \emph{Destructuring} explícito en controladores \\
+E-01 & Elevation & Endpoints con ID en URL & Sustituidos por \texttt{/me} (dato del JWT) \\
+E-02 & Elevation & Wallet con saldo negativo & Verificación de saldo $\geq$ importe; init a 0\,\euro{} \\
+E-03 & Elevation & Sin control de roles & Middleware \texttt{requireRole} con RBAC \\
+I-01 & Info Discl. & Credenciales RabbitMQ en código & Variables de entorno \\
+I-03 & Info Discl. & \emph{Stack traces} en errores 500 & Middleware global de errores \\
+I-04 & Info Discl. & Enumeración de emails en registro & Respuesta genérica \\
+I-05 & Info Discl. & Hash de contraseña en JSON & Transform \texttt{toJSON} elimina campos sensibles \\
+I-06 & Info Discl. & Blockchain pública sin auth & Protección JWT \\
+D-01 & DoS & Sin \emph{rate limiting} & 4 niveles (global, auth, password, pagos) \\
+R-01 & Repudiation & Sin logging de seguridad & Winston con eventos tipados \\
+\bottomrule
+\end{longtable}
+
+\section{Medidas complementarias}
+
+Además de las remediaciones anteriores, se aplicaron las siguientes medidas de endurecimiento:
+
+\begin{itemize}
+  \item \textbf{Cabecera \texttt{x-powered-by} deshabilitada} para no revelar la tecnología del servidor.
+  \item \textbf{Límite de tamaño del cuerpo HTTP} a 100\,KB (\texttt{express.json(\{limit: ``100kb''\})}) para prevenir ataques de \emph{payload} masivo.
+  \item \textbf{Congelación de wallets} ante disputas de Stripe: cuando se recibe un webhook \texttt{charge.dispute.created}, la wallet implicada se congela automáticamente, bloqueando transferencias y retiros hasta la resolución.
+  \item \textbf{Cabeceras de seguridad en Nginx:} \texttt{X-Frame-Options}, \texttt{X-Content-Type-Options}, \texttt{X-XSS-Protection} y \texttt{Referrer-Policy}.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Cumplimiento legal (LOPD/GDPR)}\label{ch:lopd}
+% ══════════════════════════════════════════════════════════════════
+
+La aplicación implementa los requisitos de la Ley Orgánica de Protección de Datos (LOPD)~\cite{lopd} española y del Reglamento General de Protección de Datos (GDPR)~\cite{gdpr} de la Unión Europea que resultan aplicables a un proyecto de estas características.
+
+\section{Consentimiento informado}
+
+El registro requiere la aceptación obligatoria de la política de privacidad y los términos de servicio. El backend rechaza el alta con HTTP~400 si cualquiera de los dos campos es \texttt{false}. El consentimiento se almacena en la colección \texttt{userconsents} con la fecha, la dirección IP del cliente y el \emph{user-agent} del navegador, cumpliendo los requisitos probatorios del Artículo~7 del GDPR.
+
+\section{Derecho al olvido (Artículo 17 GDPR)}
+
+El endpoint \texttt{DELETE /api/users/me} ejecuta un borrado en cascada:
+
+\begin{enumerate}
+  \item Elimina los registros de consentimiento.
+  \item Revoca todos los \emph{refresh tokens} activos (cierra todas las sesiones).
+  \item Elimina las wallets del usuario.
+  \item Anonimiza las transacciones: los campos \texttt{sender} y \texttt{receiver} se establecen a \texttt{null}, conservando el importe para mantener la integridad de la cadena de bloques.
+  \item Elimina las solicitudes de dinero.
+  \item Elimina la cuenta de usuario.
+\end{enumerate}
+
+Las entradas de la cadena de bloques no se eliminan porque la integridad de la cadena ---cada bloque referencia el hash del anterior--- es un requisito de auditoría.
+
+\section{Portabilidad de datos (Artículo 20 GDPR)}
+
+El endpoint \texttt{GET /api/users/me/export} devuelve un documento JSON con toda la información del usuario: perfil, consentimientos, wallets, transacciones y solicitudes de dinero.
+
+\section{Artículos cubiertos}
+
+La Tabla~\ref{tab:gdpr} resume los artículos del GDPR cubiertos y su implementación.
+
+\begin{table}[H]
+\centering
+\caption{Artículos del GDPR cubiertos.}\label{tab:gdpr}
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Artículo} & \textbf{Descripción} & \textbf{Estado} \\
+\midrule
+Art. 5  & Minimización de datos & Implementado \\
+Art. 7  & Consentimiento verificable & Implementado \\
+Art. 9  & Seguridad del tratamiento & Implementado \\
+Art. 12 & Auditoría & Implementado \\
+Art. 15 & Derecho de acceso & Implementado \\
+Art. 17 & Derecho al olvido & Implementado \\
+Art. 20 & Portabilidad & Implementado \\
+Art. 25 & Privacidad por diseño & Implementado \\
+Art. 32 & Medidas técnicas de seguridad & Implementado \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Blockchain Proof of Authority}\label{ch:blockchain}
+% ══════════════════════════════════════════════════════════════════
+
+\section{Propósito}
+
+La cadena de bloques de Pay2Peer no es una blockchain pública ni está orientada a criptomonedas. Es un \textbf{registro de auditoría criptográficamente verificable} que complementa la base de datos relacional. Su función es garantizar que ninguna transacción pueda ser alterada retrospectivamente sin que la alteración sea detectable.
+
+\section{Diseño y algoritmos}
+
+\begin{itemize}
+  \item \textbf{Hash de bloque:} SHA-256 calculado sobre la concatenación del índice, hash del bloque anterior, \emph{timestamp}, transacciones y \emph{nonce}.
+  \item \textbf{Firma digital:} Ed25519~\cite{ed25519} (\emph{Proof of Authority}). El servidor firma cada bloque con su clave privada; la clave pública se registra como autoridad reconocida. Solo las autoridades registradas pueden sellar bloques.
+  \item \textbf{Prueba de trabajo:} dificultad configurable (el hash debe comenzar con $N$ ceros). En producción se utiliza dificultad~2 para equilibrar velocidad y seguridad.
+  \item \textbf{Bloque génesis:} índice 0, \texttt{previousHash = ``0''}, generado automáticamente si la colección \texttt{blocks} está vacía.
+\end{itemize}
+
+\section{Ciclo de vida de un bloque}
+
+\begin{enumerate}
+  \item Cada transacción (P2P o Stripe) se añade al \emph{pool} de transacciones pendientes.
+  \item Un temporizador intenta sellar un bloque cada 10 segundos, o inmediatamente si el \emph{pool} alcanza 10 transacciones.
+  \item Se construye el bloque, se mina (PoW) y se firma (PoA).
+  \item El bloque se persiste en MongoDB.
+  \item El \emph{pool} se vacía.
+\end{enumerate}
+
+\section{Verificación}
+
+El endpoint \texttt{GET /api/blockchain/verify} recorre toda la cadena recalculando los hashes y verificando las firmas Ed25519 de cada bloque. Si la cadena es íntegra, devuelve \texttt{\{valid: true\}}. Si se detecta una inconsistencia, describe el bloque corrupto y la naturaleza de la discrepancia.
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Testing}\label{ch:testing}
+% ══════════════════════════════════════════════════════════════════
+
+\section{Estrategia}
+
+Se optó por una suite de pruebas \emph{end-to-end} (E2E) que ejercita el sistema completo: servidor HTTP, lógica de negocio y base de datos~\cite{jest,supertest}. Cada ejecución lanza el servidor real contra una instancia de MongoMemoryServer (MongoDB en memoria), garantizando aislamiento y reproducibilidad sin necesidad de una base de datos externa.
+
+Los tests de Stripe utilizan un cliente \emph{mock} inyectable mediante la función \texttt{\_setStripeForTesting()}, que permite simular respuestas de la API de Stripe sin realizar llamadas reales.
+
+\section{Resultados}
+
+La suite contiene \textbf{149 pruebas} distribuidas en \textbf{13 archivos de test}, con una tasa de éxito del 100\,\%.
+
+\begin{table}[H]
+\centering
+\caption{Distribución de tests por archivo.}\label{tab:tests}
+\begin{tabularx}{\textwidth}{lXr}
+\toprule
+\textbf{Archivo} & \textbf{Cobertura funcional} & \textbf{Tests} \\
+\midrule
+\texttt{01-auth}           & Registro, login, refresh, logout                & 15 \\
+\texttt{02-wallet}         & Balance, fondos, operaciones                    & 10 \\
+\texttt{03-transactions}   & Transferencias P2P, paginación, historial        & 12 \\
+\texttt{04-token-lifecycle} & Expiración, rotación, revocación de tokens      & 8  \\
+\texttt{05-security}       & OWASP Top 10, mass assignment, enumeración       & 15 \\
+\texttt{06-rate-limiting}  & Los 4 niveles de rate limiting                   & 10 \\
+\texttt{07-stripe-webhooks} & Verificación de firma, prevención de tampering  & 6  \\
+\texttt{08-rbac}           & Control de acceso por rol                        & 8  \\
+\texttt{09-lopd}           & Consentimiento, olvido, exportación              & 12 \\
+\texttt{10-blockchain}     & Verificación de cadena, sellado, integridad      & 10 \\
+\texttt{11-new-features}   & Solicitudes, paginación, retiro, freeze          & 15 \\
+\texttt{12-2fa}            & Setup TOTP, verificación, login flow, disable    & 9  \\
+\texttt{13-stripe-connect} & Onboarding, status, retiro real, rollback         & 15 \\
+\midrule
+\textbf{Total}             &                                                  & \textbf{149} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Aspectos técnicos relevantes}
+
+\begin{itemize}
+  \item El \emph{rate limiter} se resetea en cada \texttt{beforeEach} mediante \texttt{resetAllStores()} para evitar falsos HTTP~429 entre tests consecutivos.
+  \item La implementación TOTP en los tests utiliza \texttt{crypto} nativo (RFC~6238) en lugar de \texttt{otplib}, que presentaba incompatibilidades con el sistema de módulos de Jest.
+  \item Los tests de rollback de Stripe Connect verifican que, si la transferencia a la cuenta conectada falla, el saldo de la wallet se restaura al valor original.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Despliegue e infraestructura}\label{ch:despliegue}
+% ══════════════════════════════════════════════════════════════════
+
+\section{Stack de producción}
+
+\begin{table}[H]
+\centering
+\caption{Componentes del entorno de producción.}\label{tab:stack}
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Componente} & \textbf{Tecnología} & \textbf{Versión} \\
+\midrule
+Servidor         & VM propia (Linux)        & Debian 12   \\
+CDN / HTTPS / WAF & Cloudflare              & Free plan   \\
+Proxy inverso    & Nginx                    & Alpine      \\
+Orquestación     & Docker Compose           & v2          \\
+Frontend         & Next.js (standalone)     & 15          \\
+Backend          & Express.js               & 5           \\
+Runtime          & Node.js                  & 22 (Alpine) \\
+Base de datos    & MongoDB Atlas            & 7.0         \\
+Cola de mensajes & RabbitMQ                 & 3 (Alpine)  \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Arquitectura Docker}
+
+Los servicios se organizan en una red interna Docker (\texttt{pay2peer}). Únicamente Nginx expone puertos al exterior (80). El backend se ejecuta con el sistema de archivos en modo de solo lectura (\texttt{read\_only: true}) con directorios temporales montados en \texttt{tmpfs} para \texttt{/tmp} y \texttt{/app/logs}.
+
+\begin{lstlisting}[language={},title={Topología de servicios}]
+nginx:80  ->  frontend:3000  (Next.js standalone)
+          ->  backend:5000   (Express API)
+                 -> MongoDB Atlas (cloud, puerto 27017/TLS)
+                 -> rabbitmq:5672 (interno)
+\end{lstlisting}
+
+Las variables de entorno sensibles (claves de Stripe, secreto JWT, credenciales de base de datos) se gestionan mediante un archivo \texttt{.env.production} excluido del control de versiones.
+
+\section{Dominio y certificados TLS}
+
+\begin{itemize}
+  \item \textbf{Dominio:} \texttt{www.pauoscaralejo.es}
+  \item \textbf{TLS:} gestionado por Cloudflare con certificado automático en modo \emph{Full (Strict)}.
+  \item \textbf{DNS:} registros A apuntando al servidor; el tráfico se proxea a través de Cloudflare.
+\end{itemize}
+
+\section{Base de datos en la nube}
+
+En mayo de 2026 se migró la base de datos desde el contenedor MongoDB local a \textbf{MongoDB Atlas} (cluster gratuito M0, 512\,MB). La migración se realizó mediante \texttt{mongodump}/\texttt{mongorestore} sin pérdida de datos. Esta decisión responde a dos objetivos:
+
+\begin{enumerate}
+  \item \textbf{Disponibilidad:} Atlas proporciona réplicas automáticas y backups diarios, eliminando el riesgo de pérdida de datos ante un fallo del servidor.
+  \item \textbf{Facilitar el \emph{failover}:} al externalizar la base de datos, múltiples servidores de aplicación pueden compartir el mismo estado, requisito previo para la arquitectura de alta disponibilidad descrita en el Capítulo~\ref{ch:futuro}.
+\end{enumerate}
+
+\section{Proceso de despliegue}
+
+El despliegue es manual: los archivos modificados se transfieren al servidor mediante \texttt{scp} y se reconstruyen los contenedores afectados con \texttt{docker compose build}. Aunque funcional, este proceso es susceptible de error humano y se plantea su automatización como trabajo futuro.
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Conclusiones}\label{ch:conclusiones}
+% ══════════════════════════════════════════════════════════════════
+
+La Fase~2 del proyecto Pay2Peer ha cumplido satisfactoriamente todos los objetivos planteados. Se ha transformado un prototipo funcional pero inseguro en una aplicación que:
+
+\begin{itemize}
+  \item Ha sido analizada sistemáticamente con el modelo STRIDE, identificando y remediando 15 vulnerabilidades de seguridad.
+  \item Cumple con los requisitos aplicables de la LOPD y el GDPR: consentimiento informado, derecho al olvido, portabilidad de datos y privacidad por diseño.
+  \item Dispone de un registro de auditoría criptográficamente verificable basado en una cadena de bloques privada con firma digital Ed25519.
+  \item Implementa autenticación de dos factores TOTP, compatible con las aplicaciones de autenticación más extendidas.
+  \item Está respaldada por 149 pruebas automáticas \emph{end-to-end} que cubren la funcionalidad, la seguridad, el cumplimiento legal y la integración con servicios externos.
+  \item Está desplegada en un entorno de producción real con dominio propio, TLS y CDN.
+\end{itemize}
+
+El aprendizaje más relevante del proyecto ha sido comprobar que la seguridad aplicada es un proceso iterativo: analizar, priorizar, remediar y verificar. Muchas de las vulnerabilidades más habituales ---\emph{mass assignment}, ausencia de \emph{rate limiting}, tokens sin expiración, webhooks sin verificar--- requieren pocas líneas de código para su corrección, pero exigen saber qué buscar y dónde buscar.
+
+Un aprendizaje secundario, pero igualmente valioso, ha sido la gestión de la infraestructura de producción: comprender cómo interactúan Docker, Nginx, Cloudflare y los certificados TLS, y cómo diagnosticar problemas en un entorno donde el desarrollador no tiene acceso a la consola del navegador del usuario.
+
+% ══════════════════════════════════════════════════════════════════
+\chapter{Trabajo futuro}\label{ch:futuro}
+% ══════════════════════════════════════════════════════════════════
+
+\begin{enumerate}
+  \item \textbf{Alta disponibilidad:} despliegue de un segundo nodo de aplicación en un servidor doméstico conectado mediante Cloudflare Tunnel, con \emph{failover} automático gestionado por Cloudflare y base de datos compartida en MongoDB Atlas.
+
+  \item \textbf{Retiros bancarios reales:} activación de Stripe Connect (Express Accounts) con cuenta empresarial verificada. La infraestructura de backend y frontend ya está implementada y probada.
+
+  \item \textbf{CI/CD:} implementación de un \emph{pipeline} con GitHub Actions que ejecute la suite de tests en cada \emph{push} y despliegue automáticamente a producción si todas las pruebas pasan.
+
+  \item \textbf{Migración a PostgreSQL:} sustitución de MongoDB por PostgreSQL con Prisma como ORM, aprovechando que el esquema está estabilizado y se beneficiaría de un sistema de tipos más estricto y transacciones ACID nativas.
+
+  \item \textbf{SSO/OAuth:} integración de inicio de sesión con Google o GitHub para delegar la gestión de credenciales a proveedores de identidad consolidados.
+
+  \item \textbf{Páginas legales:} creación de páginas estáticas en el frontend (\texttt{/privacy}, \texttt{/terms}) que complementen el consentimiento registrado en el backend.
+
+  \item \textbf{Notificación de brechas (Art. 33 GDPR):} mecanismo de alerta al responsable de protección de datos ante accesos no autorizados detectados por el sistema de \emph{logging}.
+\end{enumerate}
+
+% ── BIBLIOGRAFÍA ──────────────────────────────────────────────────
+\printbibliography[heading=bibintoc,title={Bibliografía}]
+
+\end{document}

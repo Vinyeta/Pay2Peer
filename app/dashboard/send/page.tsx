@@ -1,13 +1,14 @@
  'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, CheckCircle, XCircle, SendHorizonal } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from '../../components/Sidebar';
 
 export default function SendPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => { setSidebarOpen(window.innerWidth >= 768) }, [])
   const [email, setEmail] = useState('');
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);

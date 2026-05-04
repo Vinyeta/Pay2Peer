@@ -1,24 +1,47 @@
  'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, CheckCircle, XCircle, Inbox } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext'
 
 export default function RequestPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => { setSidebarOpen(window.innerWidth >= 768) }, [])
   const [email, setEmail] = useState('');
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [statusOk, setStatusOk] = useState(true);
+  const [sentRequests, setSentRequests] = useState<any[]>([]);
+  const [loadingSent, setLoadingSent] = useState(true);
   const auth = useAuth()
 
   const showStatus = (msg: string, ok: boolean) => {
     setStatusMsg(msg)
     setStatusOk(ok)
     if (ok) setTimeout(() => setStatusMsg(null), 4000)
+  }
+
+  useEffect(() => {
+    if (!auth.token) return
+    setLoadingSent(true)
+    auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/sent`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setSentRequests(Array.isArray(data) ? data : []))
+      .catch(() => setSentRequests([]))
+      .finally(() => setLoadingSent(false))
+  }, [auth.token])
+
+  const cancelRequest = async (id: string) => {
+    try {
+      const res = await auth.authFetch(`${process.env.NEXT_PUBLIC_API_ROOT}api/requestMoney/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'cancelled' }),
+      })
+      if (res.ok) setSentRequests(prev => prev.filter(r => r._id !== id))
+    } catch { /* silent */ }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,7 +184,7 @@ export default function RequestPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.3 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="absolute bottom-10 right-10 w-40 h-40"
+            className="absolute bottom-10 right-10 w-40 h-40 pointer-events-none"
           >
             <div className="grid grid-cols-8 gap-2">
               {Array.from({ length: 64 }).map((_, i) => (
@@ -170,8 +193,41 @@ export default function RequestPage() {
             </div>
           </motion.div>
 
-          
             </div>
+
+            {/* Sent requests */}
+            <div className="w-full max-w-md mx-auto mt-8 pb-24 md:pb-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Sent requests</h2>
+              {loadingSent ? (
+                <p className="text-sm text-gray-400">Loading...</p>
+              ) : sentRequests.length === 0 ? (
+                <p className="text-sm text-gray-400">No pending sent requests</p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {sentRequests.map(req => {
+                    const toName = req.receiver?.author?.name ?? req.receiver?.author?.email ?? 'Unknown'
+                    return (
+                      <div key={req._id} className="flex items-center justify-between bg-white rounded-lg border border-gray-100 shadow-sm px-4 py-3">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-gray-800">To: {toName}</span>
+                          <span className="text-xs text-gray-400">{new Date(req.date).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-semibold text-teal-600">{req.amount}</span>
+                          <button
+                            onClick={() => cancelRequest(req._id)}
+                            className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-3 py-1 rounded-lg transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </main>
