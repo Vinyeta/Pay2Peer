@@ -152,11 +152,14 @@ export default function DashboardPage() {
                   <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50 shadow-sm">
                     {recentTxs.map((t: any, idx: number) => {
                       const walletId = auth.wallet?._id
-                      const isSender = t.sender?._id === walletId || t.sender === walletId
+                      const isWithdrawal = t.stripeSender === "WITHDRAWAL"
+                      const isSender = isWithdrawal || t.sender?._id === walletId || t.sender === walletId
                       const counterparty = isSender ? (t.receiver?.author ?? t.receiver) : (t.sender?.author ?? t.sender)
                       let name = counterparty?.name ?? counterparty?.email ?? "Unknown"
-                      if ((name === "Unknown" || !name) && t.stripeSender) {
-                        name = t.stripeSender === "WITHDRAWAL" ? "Withdrawal" : t.stripeSender === "REFUND" ? "Refund" : "Top-up (Stripe)"
+                      if (isWithdrawal) {
+                        name = "Withdrawal"
+                      } else if ((name === "Unknown" || !name) && t.stripeSender) {
+                        name = t.stripeSender === "REFUND" ? "Refund" : "Top-up (Stripe)"
                       }
                       const raw = String(t.amount ?? "0").replace(/[^0-9.-]+/g, "")
                       let num = parseFloat(raw) || 0
