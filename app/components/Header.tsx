@@ -6,6 +6,7 @@ import { Link } from "react-router";
 export function Header() {
     
     return (
+        <div></div>
         <div className="flex justify-between items-center mx-[5%] mt-[10px]">
             <div className="flex flex-col md:flex-row gap-y-2 md:gap-x-10 align-center">
                 <Link to="/about">About</Link>
