@@ -7,7 +7,9 @@ export function Button({text, onClick, opaque }) {
                 onClick={onClick}
             >
                 {text}
+                <div></div>
             </button>
+            <div></div>
         </div>
     );
 }
