@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 
 export  function Landing  () {
     return (
+        <button></button>
         <div className="mt-20 mx-20">
             <div className="flex md:flex-row justify-center items-center gap-10 m-10">
                 <motion.div 
